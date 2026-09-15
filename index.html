@@ -115,15 +115,20 @@
 
   <div class="relative flex-1 flex overflow-hidden">
     <!-- Category Filter Bar (Slide down / toggled) -->
-    <div id="category-filter-drawer" class="absolute top-0 left-0 right-0 z-10 bg-slate-900/95 border-b border-slate-800 px-4 py-2.5 flex flex-wrap gap-2 text-xs backdrop-blur shadow-2xl transition-all duration-200 -translate-y-full opacity-0 pointer-events-none">
-      <span class="text-slate-400 self-center font-medium mr-1 text-[11px] uppercase tracking-wider">Filtrar Eje:</span>
-      <button data-cat="all" class="cat-pill active px-3 py-1 rounded-full bg-cyan-500 text-slate-950 font-bold transition">Todas (21)</button>
+    <div id="category-filter-drawer" class="absolute top-0 left-0 right-0 z-30 bg-slate-900/98 border-b border-slate-800 px-4 py-2.5 flex flex-wrap items-center gap-2 text-xs backdrop-blur-md shadow-2xl transition-all duration-200 -translate-y-full opacity-0 pointer-events-none">
+      <div class="flex items-center justify-between w-full sm:w-auto gap-2">
+        <span class="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Filtrar Eje:</span>
+        <button id="close-category-drawer" class="sm:hidden text-slate-400 hover:text-white p-1 rounded">
+          <i class="ph-bold ph-x text-xs"></i>
+        </button>
+      </div>
+      <button data-cat="all" class="cat-pill active px-3 py-1 rounded-full bg-cyan-500 text-slate-950 font-bold transition">Todas (<span id="cat-total-count">28</span>)</button>
       <button data-cat="eczemas" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-pink-400 border border-pink-500/30 transition">Eczemas & Dermatitis</button>
       <button data-cat="infecciosas" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 transition">Infecciones Cutáneas</button>
       <button data-cat="eritematosas" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 transition">Eritematoescamosas</button>
       <button data-cat="anexos" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-purple-400 border border-purple-500/30 transition">Acné, Rosácea & Folículo</button>
-      <button data-cat="tumores" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 transition">Oncología & Pigmentarias</button>
-      <button data-cat="alergias" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/30 transition">Alergias & RAM</button>
+      <button data-cat="tumores" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 transition">Oncología & Tumores</button>
+      <button data-cat="alergias" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/30 transition">Alergias, RAM & Misceláneas</button>
     </div>
 
     <!-- MAIN GRAPH AREA -->
@@ -143,10 +148,13 @@
         </button>
       </div>
 
-      <!-- Active Connection Helper Badge -->
-      <div id="graph-hint" class="absolute top-4 left-4 z-10 pointer-events-none bg-slate-900/90 backdrop-blur border border-slate-800/80 px-3 py-1.5 rounded-lg shadow-lg text-[11px] text-slate-300 flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-        <span>Haz clic en un globo para examinar diagnósticos diferenciales y tratamientos con dosis</span>
+      <!-- Active Connection Helper Badge: Positioned cleanly with dismiss button to never block drawer -->
+      <div id="graph-hint" class="absolute top-3 left-3 z-10 bg-slate-900/90 backdrop-blur border border-slate-800/90 px-3 py-1.5 rounded-xl shadow-lg text-[11px] text-slate-300 flex items-center gap-2 max-w-sm transition-opacity duration-200">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping shrink-0"></span>
+        <span class="flex-1">Haz clic en un globo para examinar diagnósticos diferenciales y tratamientos con dosis</span>
+        <button id="close-graph-hint" class="text-slate-400 hover:text-white p-0.5 rounded transition" title="Ocultar aviso">
+          <i class="ph ph-x text-xs"></i>
+        </button>
       </div>
 
       <!-- Quick Legend on Bottom-Right of canvas -->
@@ -1496,6 +1504,376 @@
           { id: "pitiriasis_alba", pearl: "Lesiones hipocrómicas mal delimitadas con xerosis superficial en niños atópicos, no tienen la pérdida total de pigmento del vitíligo." },
           { id: "liquen_escleroso", pearl: "Afecta área anogenital femenina con atrofia epidérmica 'en papel de cigarrillo' y retracción anatómica; el vitíligo no genera atrofia cutánea." }
         ]
+      },
+      {
+        id: "queratosis_actinica",
+        name: "Queratosis Actínica (QA)",
+        category: "tumores",
+        categoryLabel: "Oncología & Tumores",
+        color: "#f43f5e",
+        eunacom: { diag: "Sospecha / Específico", tto: "Inicial / Derivar", seg: "Derivar" },
+        fisiopatologia: "Displasia epitelial queratinocítica in situ fotoinducida por exposición crónica a radiación ultravioleta. Es la lesión premaligna cutánea más frecuente con potencial de progresión a Carcinoma Espinocelular (CEC) invasor.",
+        clinica: [
+          "Mácula o pápula eritematosa ocre con <strong>superficie rasposa hiperqueratósica adherente</strong> ('tacto en papel de lija').",
+          "A menudo se palpa antes de verse con claridad.",
+          "<strong>Distribución:</strong> Zonas crónicamente fotoexpuestas en adultos mayores (calva en cuero cabelludo, frente, dorso de nariz, pabellones auriculares, dorso de manos).",
+          "<strong>Signo de alarma:</strong> Si se palpa una base indurada o nódulo infiltrado, sospechar progresión a Carcinoma Espinocelular infiltrante."
+        ],
+        diagnostico: [
+          "Diagnóstico fundamentalmente clínico y dermatoscópico (patrón en 'fresa').",
+          "Biopsia cutánea ante induración palpable profunda, sangrado o crecimiento rápido para descartar CEC invasivo."
+        ],
+        tratamiento: {
+          general: [
+            "Fotoprotección estricta de por vida con protector solar FPS 50+ diario cada 2-3 horas.",
+            "Uso de sombreros de ala ancha y ropa protectora UV.",
+            "Explicar concepto de <em>campo de cancerización</em> (piel adyacente aparentemente sana con mutaciones subclínicas)."
+          ],
+          primera: [
+            "<strong>Lesiones aisladas:</strong> Crioterapia con nitrógeno líquido (spray durante 5-10 segundos por lesión) por dermatólogo.",
+            "<strong>Terapia de campo de cancerización (médico general / especialista):</strong><br>• 5-Fluorouracilo 5% crema (5-FU): aplicar cada 12 h por 2 a 4 semanas (genera eritema y costras inflamatorias esperables).<br>• O Imiquimod 5% crema 3 veces por semana (noches alternas) por 4 semanas."
+          ],
+          segunda: [
+            "Ácido hialurónico 3% + Diclofenaco sódico 2.5% gel: aplicar cada 12 h por 60 a 90 días (excelente tolerancia).",
+            "Terapia fotodinámica (TFD) en clínica dermatológica."
+          ],
+          derivacion: [
+            "Lesiones induradas, ulceradas, refractarias a crioterapia o de crecimiento rápido (descarte de CEC).",
+            "Campos de cancerización extensos o pacientes inmunodeprimidos (trasplantados)."
+          ]
+        },
+        differentials: [
+          { id: "queratosis_seborreica", pearl: "La QS tiene aspecto verrugoso untuoso adherido ('pegada como galleta kuky'), superficie aterciopelada y no tiene tacto rasposo de papel de lija ni premalignidad." },
+          { id: "cancer_piel_no_melanoma", pearl: "El CBC presenta borde perlado traslúcido con telangiectasias arboriformes; el CEC invasor muestra franca infiltración indurada en profundidad." },
+          { id: "psoriasis", pearl: "Placas eritematosas bien delimitadas con escamas plateadas gruesas nacaradas y Auspitz (+); no limitadas exclusivamente a la calva o dorso nasal senil." }
+        ]
+      },
+      {
+        id: "queratosis_seborreica",
+        name: "Queratosis Seborreica (QS)",
+        category: "tumores",
+        categoryLabel: "Oncología & Tumores",
+        color: "#f43f5e",
+        eunacom: { diag: "Específico", tto: "Completo / Observar", seg: "Completo" },
+        fisiopatologia: "Proliferación epidérmica benigna clonal de queratinocitos inmaduros basoloides con pseudoquistes de queratina (quistes de milium córneos). Tumor cutáneo benigno más frecuente en mayores de 40 años; no posee ningún potencial maligno.",
+        clinica: [
+          "Pápula o placa pigmentada (marrón, ocre, negra o grisácea) con aspecto característico de <strong>'estar pegada sobre la piel' ('galleta Kuky')</strong>.",
+          "Superficie verrugosa, cerosa, opaca o aterciopelada con pequeños tapones de queratina.",
+          "<strong>Distribución:</strong> Cara, cuello, tronco anterior y espalda. Respeta totalmente palmas y plantas.",
+          "<strong>Signo de Leser-Trélat:</strong> Erupción explosiva de cientos de queratosis seborreicas pruriginosas en pocas semanas (marcador paraneoplásico infrecuente de adenocarcinoma gástrico u oculto)."
+        ],
+        diagnostico: [
+          "Clínico directo + Dermatoscopía (tapones córneos en criptas, quistes de milium córneos blanquecinos y borde apolillado o fisurado).",
+          "No requiere biopsia salvo que exista duda diagnóstica con melanoma o carcinoma basocelular pigmentado."
+        ],
+        tratamiento: {
+          general: [
+            "<strong>Conducta en Medicina General: Observación y tranquilidad al paciente.</strong> Explicar naturaleza 100% benigna.",
+            "No requiere extirpación sistemática salvo molestia mecánica por roce de ropa, sangrado por traumatismo o solicitud cosmética."
+          ],
+          primera: [
+            "Si la lesión sangra, se irrita o molesta:<br>• Curetaje superficial / legrado bajo anestesia local infiltrativa.<br>• O Crioterapia con nitrógeno líquido por especialista.<br>• O Shave / extirpación tangencial con electrocoagulación de la base."
+          ],
+          segunda: [
+            "Láser ablativo de CO2 o Er:YAG en consulta dermatológica."
+          ],
+          derivacion: [
+            "Lesión intensamente pigmentada asimétrica o de crecimiento atípico que impida descartar Melanoma Maligno.",
+            "Aparición súbita masiva eruptiva acompañada de prurito (sospecha de Leser-Trélat: estudio oncológico sistémico)."
+          ]
+        },
+        differentials: [
+          { id: "melanoma", pearl: "El melanoma cumple la regla ABCDE con policromía, asimetría, bordes infiltrantes y sin aspecto adherido ceroso ni tapones córneos de queratina." },
+          { id: "queratosis_actinica", pearl: "La QA es rasposa en lija, fotoexpuesta y premaligna; la QS es untuosa sobre elevada indolora benigna." },
+          { id: "cancer_piel_no_melanoma", pearl: "El CBC pigmentado tiene brillo perlado translúcido y telangiectasias finas arboriformes, sin aspecto de costra adherida." }
+        ]
+      },
+      {
+        id: "granuloma_piogenico",
+        name: "Granuloma Piogénico (Telangiectásico)",
+        category: "tumores",
+        categoryLabel: "Oncología & Tumores",
+        color: "#f43f5e",
+        eunacom: { diag: "Específico", tto: "Inicial", seg: "Derivar" },
+        fisiopatologia: "Hemangioma capilar lobulillar benigno reactivo. Proliferación vascular capilar rápida secundaria a microtraumatismos repetidos o estímulos hormonales (embarazo: 'épulis gravídico'). No es purulento ni de etiología bacteriana.",
+        clinica: [
+          "Pápula o nódulo vascular cupuliforme eritematoso rojo-violáceo o aframbuesado de <strong>crecimiento rápido (días a semanas)</strong>.",
+          "Superficie brillante que con frecuencia se erosiona y muestra un <strong>sangrado profuso, pulsátil e incoercible ante roces mínimos</strong>.",
+          "Presenta un collarete epidérmico periférico sobreelevado característico.",
+          "<strong>Topografía habitual:</strong> Dedos de manos y pies, labios, mucosa gingival y cara."
+        ],
+        diagnostico: [
+          "Clínico directo por la historia de crecimiento brusco y hemorragias repetitivas.",
+          "Estudio histopatológico de la pieza quirúrgica extirpada obligatorio para confirmar benignidad y descartar melanoma amelanótico o sarcoma de Kaposi."
+        ],
+        tratamiento: {
+          general: [
+            "Presión hemostática directa firme con gasa durante 10-15 minutos ante episodios de sangrado activo.",
+            "Vendaje compresivo protector."
+          ],
+          primera: [
+            "<strong>Tratamiento definitivo de elección:</strong> Legrado / curetaje quirúrgico con <strong>electrocoagulación exhaustiva de la base vascular</strong> bajo anestesia local (para evitar recidivas frecuentes).",
+            "O extirpación quirúrgica completa en huso con sutura primaria."
+          ],
+          segunda: [
+            "En gestantes con granulomas gingivales pequeños no sangrantes: conducta expectante (suelen involucionar espontáneamente postparto).",
+            "Timolol tópico al 0.5% en gel cada 12 h como alternativa conservadora en niños."
+          ],
+          derivacion: [
+            "Derivación a Cirugía Menor o Dermatología para legrado y electrocoagulación hemostática con biopsia diagnóstica."
+          ]
+        },
+        differentials: [
+          { id: "melanoma", pearl: "El melanoma amelanótico (sin pigmento) puede sangrar y crecer rápido; la biopsia de la pieza tras electrocauterización es indispensable." },
+          { id: "cancer_piel_no_melanoma", pearl: "El carcinoma espinocelular sangra pero es más lento, hiperqueratósico y se presenta sobre piel senil con daño solar crónico previo." },
+          { id: "hemangioma_infantil", pearl: "El hemangioma infantil aparece en neonatos y sigue una fase proliferativa seguida de lenta involución espontánea; el piogénico sangra profusamente ante mínimos roces." }
+        ]
+      },
+      {
+        id: "hemangioma_infantil",
+        name: "Hemangioma Infantil",
+        category: "tumores",
+        categoryLabel: "Oncología & Tumores",
+        color: "#f43f5e",
+        eunacom: { diag: "Específico", tto: "Inicial / Derivar", seg: "Derivar" },
+        fisiopatologia: "Neoplasia vascular benigna más frecuente de la infancia, caracterizada por hiperplasia clonal de células endoteliales positivas para GLUT-1. Cursa con ciclo biológico trifásico: proliferación rápida, meseta e involución espontánea.",
+        clinica: [
+          "Inicia como una mácula pálida o telangiectásica en las primeras semanas de vida, que evoluciona a <strong>placa o tumor rojo brillante 'en frutilla' o aframbuesado</strong>.",
+          "<strong>Fase proliferativa:</strong> Crecimiento acelerado durante los primeros 3 a 6 meses (tamaño máximo hacia los 9 meses).",
+          "<strong>Fase involutiva:</strong> Involución lenta desde los 12-18 meses hasta los 5-7 años de vida, reemplazándose por tejido fibrograso residual.",
+          "<strong>Criterios de Alarma / Derivación EUNACOM:</strong> Hemangiomas >5 cm, localización periorificial (labios, vía aérea: estridor), periocular (ambliopía), punta nasal, área del pañal (ulceración dolorosa), en 'barba' (afectación subglótica) o >5 lesiones cutáneas (descartar hemangiomatosis hepática)."
+        ],
+        diagnostico: [
+          "Clínico directo.",
+          "Ecografía Doppler de partes blandas si hay duda o componente subcutáneo profundo.",
+          "Ecografía abdominal si hay ≥5 hemangiomas cutáneos."
+        ],
+        tratamiento: {
+          general: [
+            "La gran mayoría de hemangiomas pequeños no complicados solo requieren <strong>observación activa y seguimiento fotográfico periódico</strong>.",
+            "Cuidados de la piel: lubricación suave para prevenir erosiones."
+          ],
+          primera: [
+            "<strong>Hemangiomas pequeños, superficiales o perioculares no obstructivos:</strong> Timolol 0.5% solución oftálmica: 1 gota cada 12 h aplicada tópicamente en la lesión.",
+            "<strong>Hemangiomas de alto riesgo / complicados (Gold Standard):</strong><br>• <strong>Propranolol oral:</strong> 2 a 3 mg/kg/día dividido en 2 o 3 tomas diarias (iniciado precozmente durante fase proliferativa bajo supervisión pediátrica/cardiológica)."
+          ],
+          segunda: [
+            "Corticoides orales sistémicos (Prednisolona 2-3 mg/kg/día) si existe contraindicación a betabloqueadores.",
+            "Láser de colorante pulsado (PDL) para telangiectasias residuales postinvolución."
+          ],
+          derivacion: [
+            "Cualquier hemangioma de riesgo funcional (ocular, vía aérea, perioral), en pliegues con ulceración recurrente, o hemangiomas múltiples (>5): DERIVACIÓN URGENTE a Pediatría/Dermatología."
+          ]
+        },
+        differentials: [
+          { id: "granuloma_piogenico", pearl: "Aparece tras traumatismos, sangra masivamente con el roce más mínimo y no involuciona espontáneamente." },
+          { id: "cancer_piel_no_melanoma", pearl: "Tumores epiteliales del adulto mayor con daño solar; no ocurren como masas congénitas infantiles con ciclo de regresión." }
+        ]
+      },
+      {
+        id: "urticaria_aguda",
+        name: "Urticaria Aguda & Angioedema",
+        category: "alergias",
+        categoryLabel: "Alergias, RAM & Misceláneas",
+        color: "#3b82f6",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo / Derivar" },
+        fisiopatologia: "Activación y desgranulación de mastocitos y basófilos dérmicos con liberación de histamina y otros mediadores vasoactivos. Aumento de permeabilidad capilar y vasodilatación transitoria. Causas principales: infecciones virales intercurrentes (50%), fármacos (AINEs, betalactámicos) o alimentos.",
+        clinica: [
+          "Lesión cardinal: <strong>Habón o roncha eritematosa edematosa muy pruriginosa</strong>.",
+          "<strong>REGLA SEMIOLÓGICA DE ORO: EVANESCENCIA</strong>. Cada habón individual dura <strong>menos de 24 horas</strong> en un mismo sitio anatómico, desapareciendo sin dejar marca ni secuela para brotar en otra localización.",
+          "<strong>Angioedema asociado (40%):</strong> Tumefacción difusa no pruriginosa sino dolorosa de hipodermis y mucosas (labios, párpados, lengua).",
+          "<strong>Signos de ANAFILAXIA (Emergencia Médica Vital):</strong> Compromiso de 2 o más órganos (urticaria + disnea/estridor laringeo/sibilancias + hipotensión/síncope + dolor abdominal o vómitos)."
+        ],
+        diagnostico: [
+          "Clínico estricto. Interrogatorio dirigido de fármacos consumidos en las últimas 24-48 h, alimentos e infecciones virales recientes.",
+          "No requiere pruebas de laboratorio en fase aguda <6 semanas."
+        ],
+        tratamiento: {
+          general: [
+            "Identificación y cese inmediato del alérgeno o fármaco desencadenante.",
+            "Evitar agravantes inespecíficos: calor, baños calientes, alcohol, estrés y consumo de AINEs/Aspirina."
+          ],
+          primera: [
+            "<strong>Antihistamínicos H1 de 2ª generación no sedantes (Pilar de Elección):</strong><br>• Cetirizina 10 mg/día VO, o Levocetirizina 5 mg/día VO, o Desloratadina 5 mg/día VO, o Loratadina 10 mg/día VO.<br>• Si no hay control adecuado: <strong>escalar dosis hasta 4 veces la estándar</strong> (ej. Cetirizina 10 mg c/12 h o 20 mg c/12 h) por 2 a 4 semanas.",
+            "<strong>Si hay compromiso de vía aérea o sospecha de anafilaxia:</strong><br>• <strong>Adrenalina (Epinefrina) 1:1.000 (1 mg/ml): 0.3 a 0.5 mg IM</strong> en cara anterolateral del muslo de inmediato. Repetir cada 5-15 min según respuesta."
+          ],
+          segunda: [
+            "En angioedema severo o brotes intensos refractarios: Ciclo corto de corticoide oral (Prednisona 20-40 mg/día VO por 3 a 5 días con suspensión directa).",
+            "Antihistamínicos H1 sedantes de noche (Hidroxicina 25 mg o Clorfenamina 4 mg) si el prurito altera el sueño."
+          ],
+          derivacion: [
+            "Episodio de anafilaxia o angioedema laríngeo: Manejo de URGENCIA inmediato y posterior derivación a Inmunología/Alergias.",
+            "Urticaria crónica (>6 semanas continuas de habones diarios)."
+          ]
+        },
+        differentials: [
+          { id: "reaccion_farmacos", pearl: "El exantema morbiliforme por drogas es fijo (las lesiones permanecen por días en el mismo lugar sin resolverse en <24 h); el habón de urticaria es evanescente." },
+          { id: "eritema_polimorfo", pearl: "Las lesiones en diana del eritema multiforme son fijas por 7-14 días, no pican intensamente y pueden presentar ampollas centrales." },
+          { id: "prurigo_insectos", pearl: "Pápulas y seropápulas con punto central de picadura que persisten varios días; no cambian de posición de la mañana a la noche." }
+        ]
+      },
+      {
+        id: "eritema_polimorfo",
+        name: "Eritema Polimorfo Menor (Multiforme)",
+        category: "alergias",
+        categoryLabel: "Alergias, RAM & Misceláneas",
+        color: "#3b82f6",
+        eunacom: { diag: "Específico", tto: "Completo / Inicial", seg: "Completo" },
+        fisiopatologia: "Reacción inmunomediada por hipersensibilidad celular frente a antígenos virales, principalmente reactivación del <strong>Virus Herpes Simple (HSV tipo 1 y 2 en >70-80% de los casos)</strong>, o menos frecuentemente <em>Mycoplasma pneumoniae</em> o fármacos.",
+        clinica: [
+          "Lesión patognomónica elemental: <strong>Lesión en 'diana' o 'escarapela' típica</strong>.<br>Consta de 3 anillos concéntricos bien definidos: centro oscuro purpúrico o vesicular, anillo intermedio pálido edematoso y halo externo eritematoso.",
+          "<strong>Distribución simétrica y acral:</strong> Dorso de manos y pies, palmas, plantas y caras extensoras de extremidades. Respeta tronco.",
+          "Compromiso mucoso nulo o leve (a lo sumo erosiones superficiales en labios sin afección genital ni ocular).",
+          "Cuadro agudo autolimitado que resuelve en 2 a 4 semanas."
+        ],
+        diagnostico: [
+          "Diagnóstico puramente clínico por la morfología típica en diana de 3 zonas y antecedente de herpes labial previo (1-2 semanas antes).",
+          "Biopsia cutánea solo en casos atípicos con necrosis queratinocítica basal."
+        ],
+        tratamiento: {
+          general: [
+            "Tranquilizar al paciente sobre la naturaleza autolimitada y benigna del cuadro.",
+            "Manejo sintomático con compresas frescas."
+          ],
+          primera: [
+            "<strong>Sintomático de soporte:</strong><br>• Antihistamínicos orales (Cetirizina 10 mg/día o Clorfenamina 4 mg c/8 h) para alivio de prurito/ardor.<br>• Corticoides tópicos de potencia media a alta (Mometasona 0.1% o Clobetasol 0.05% crema cada 12 h) en lesiones activas.",
+            "Si se pesquisa episodio de herpes simple en curso: Valaciclovir 500 mg c/12 h o Aciclovir 400 mg c/8 h VO por 5 días."
+          ],
+          segunda: [
+            "En cuadros muy extensos o dolorosos: Prednisona oral 0.5 a 1 mg/kg/día por 7 a 10 días.",
+            "<strong>En eritema multiforme recurrente asociado a herpes:</strong> Terapia profiláctica antiviral continua con Valaciclovir 500 mg/día VO durante 6 a 12 meses."
+          ],
+          derivacion: [
+            "Compromiso de ≥2 mucosas (oral + ocular/genital), signo de Nikolsky positivo o descamación ampollar epidérmica: <strong>Sospecha de Síndrome de Stevens-Johnson (SSJ): HOSPITALIZACIÓN URGENTE EN UCI</strong>."
+          ]
+        },
+        differentials: [
+          { id: "urticaria_aguda", pearl: "Las lesiones de urticaria son evanescentes (<24 h) y no tienen 3 anillos concéntricos con necrosis central; las dianas del EM son fijas durante semanas." },
+          { id: "reaccion_farmacos", pearl: "El SSJ presenta dianas atípicas planas de 2 zonas, ampollas despegables, afectación mucosa severa y fiebre; el EM menor es acral y benigno." },
+          { id: "pitiriasis_rosada", pearl: "La PR tiene medallón heráldico y collarete interno en tronco en árbol de navidad; no presenta lesiones acrales en diana ni afecta palmas." }
+        ]
+      },
+      {
+        id: "eritema_nodoso",
+        name: "Eritema Nodoso (Paniculitis)",
+        category: "alergias",
+        categoryLabel: "Alergias, RAM & Misceláneas",
+        color: "#3b82f6",
+        eunacom: { diag: "Específico / Sospecha", tto: "Inicial / Completo", seg: "Completo / Derivar" },
+        fisiopatologia: "Paniculitis septal sin vasculitis. Reacción de hipersensibilidad retardada tipo IV frente a múltiples antígenos sistémicos. Etiologías más comunes: Infección estreptocócica faríngea (EBHA, 30-40%), sarcoidosis, tuberculosis, enfermedad inflamatoria intestinal (Crohn/colitis ulcerosa) o fármacos (anticonceptivos orales, sulfas).",
+        clinica: [
+          "Aparición súbita de <strong>nódulos eritematosos eritemato-violáceos profundos, calientes y muy dolorosos a la palpación</strong>.",
+          "<strong>Topografía patognomónica:</strong> Caras anteriores pretibiales de ambas piernas (bilaterales y simétricos).",
+          "<strong>Evolución contusiforme:</strong> Cambian de color progresivamente como un hematoma (rojo brillante $\\to$ violáceo $\\to$ amarillento-verdoso) en 3 a 6 semanas.",
+          "<strong>REGLA SEMIOLÓGICA: NUNCA SE ULCERAN</strong> y curan sin dejar cicatriz.",
+          "Frecuentemente acompañado de fiebre, malestar general y artralgias o artritis de tobillos."
+        ],
+        diagnostico: [
+          "Clínico evidente por palpación pretibial dolorosa.",
+          "<strong>Estudio etiológico inicial obligatorio de médico general:</strong><br>1. Radiografía de tórax (descartar adenopatías hiliares de sarcoidosis o TBC).<br>2. Test estreptocócico o título de Antiestreptolisina O (ASLO).<br>3. PPD / QuantiFERON para TBC.<br>4. Hemograma, VHS y PCR."
+        ],
+        tratamiento: {
+          general: [
+            "<strong>Reposo absoluto en cama con piernas elevadas</strong> (medida más efectiva para acelerar la resolución y aliviar el dolor).",
+            "Tratar la causa de base identificada (ej. antibióticos si hay faringitis estreptocócica)."
+          ],
+          primera: [
+            "<strong>AINEs de primera línea:</strong><br>• Indometacina 25 a 50 mg cada 8-12 h VO con las comidas por 2 a 3 semanas.<br>• O Naproxeno 500 mg cada 12 h VO por 2 a 3 semanas.<br>• Compresas frías locales."
+          ],
+          segunda: [
+            "Yoduro de potasio en solución (300 a 900 mg/día VO) en casos rebeldes.",
+            "Corticoides orales (Prednisona 20 a 40 mg/día VO por 1 a 2 semanas): <strong>ÚNICAMENTE TRAS HABER DESCARTADO CATEGÓRICAMENTE INFECCIÓN ACTIVA O TUBERCULOSIS</strong>."
+          ],
+          derivacion: [
+            "Nódulos ulcerados o en cara posterior de pantorrilla (sospecha de Vasculitis nodular / Eritema Indurado de Bazin tuberculoso).",
+            "Adenopatías mediastínicas en radiografía (evaluación por broncopulmonar por Sarcoidosis o TBC)."
+          ]
+        },
+        differentials: [
+          { id: "celulitis_erisipela", pearl: "La celulitis es habitualmente unilateral con bordes difusos y puerta de entrada; el eritema nodoso es bilateral, pretibial en nódulos múltiples que no se ulceran." },
+          { id: "tvp", pearl: "La trombosis venosa profunda cursa con empastamiento unilateral de pantorrilla, dolor con la dorsiflexión y no genera nódulos eritematosos pretibiales bilaterales." }
+        ]
+      },
+      {
+        id: "lupus_discoide",
+        name: "Lupus Eritematoso Cutáneo Crónico (Discoide)",
+        category: "tumores",
+        categoryLabel: "Oncología & Tumores",
+        color: "#f43f5e",
+        eunacom: { diag: "Sospecha", tto: "Inicial", seg: "Derivar" },
+        fisiopatologia: "Enfermedad autoinmune cutánea fotoinducida con infiltrado linfocitario de la unión dermoepidérmica y folículos pilosos. El 90% permanece confinado a piel, pero un 5-10% puede evolucionar a Lupus Eritematoso Sistémico (LES).",
+        clinica: [
+          "<strong>Tríada clínica patognomónica de la placa discoide:</strong><br>1. <strong>Eritema</strong> activo periférico sobreelevado.<br>2. <strong>Hiperqueratosis con tapones córneos foliculares</strong> (al desprender la escama se observa el <em>signo de la tachuela de alfombra</em>).<br>3. <strong>Atrofia cicatrizal central irreversible</strong> con hipopigmentación central y borde hiperpigmentado.",
+          "<strong>Topografía:</strong> Rostro (mejillas, puente nasal), pabellones auriculares (concha auricular) y cuero cabelludo.",
+          "<strong>En cuero cabelludo:</strong> Causa <strong>alopecia cicatrizal definitiva irreversible</strong> con pérdida permanente de orificios foliculares."
+        ],
+        diagnostico: [
+          "Sospecha clínica + Biopsia cutánea con Inmunofluorescencia Directa (Banda lúpica positiva en unión dermoepidérmica con IgG/C3).",
+          "<strong>Descarte obligado de Lupus Sistémico:</strong> Anticuerpos ANA, anti-DNA doble hebra, anti-Sm, hemograma, sedimento de orina y niveles de complemento (C3 y C4)."
+        ],
+        tratamiento: {
+          general: [
+            "<strong>FOTOPROTECCIÓN SOLAR ABSOLUTA:</strong> Bloqueador solar FPS 50+ diario estricto y evitar exposición lumínica (el sol desencadena las lesiones de forma directa)."
+          ],
+          primera: [
+            "<strong>Corticoides tópicos de alta potencia en placas activas:</strong> Clobetasol propionato 0.05% crema o ungüento cada 12-24 h por 3 a 4 semanas.",
+            "Infiltración intralesional con Acetónido de Triamcinolona (5 a 10 mg/ml) en placas gruesas hipertróficas o cuero cabelludo por dermatólogo."
+          ],
+          segunda: [
+            "<strong>Terapia antipalúdica sistémica de elección (especialista):</strong> Hidroxicloroquina 200 a 400 mg/día VO (requiere control oftalmológico basal y periódico por toxicidad retiniana).",
+            "Inhibidores de calcineurina tópicos (Tacrolimus 0.1%) para áreas faciales delicadas."
+          ],
+          derivacion: [
+            "Todo paciente sospechoso: DERIVAR a Dermatología/Reumatología para confirmación histopatológica, inicio de antipalúdicos y descarte de LES."
+          ]
+        },
+        differentials: [
+          { id: "rosacea", pearl: "La rosácea centrofacial tiene eritema telangiectásico con pápulo-pústulas y flushing; no genera tapones córneos ni atrofia cicatrizal ni alopecia definitiva." },
+          { id: "psoriasis", pearl: "La psoriasis tiene escamas plateadas no adherentes con signo de Auspitz; no causa tapones foliculares ni atrofia cicatrizal irreversible." },
+          { id: "alopecia", pearl: "La alopecia areata o androgenética son no cicatrizales (conservan los orificios foliculares); el lupus discoide destruye el folículo de forma definitiva." }
+        ]
+      },
+      {
+        id: "loxoscelismo",
+        name: "Loxoscelismo (Mordedura Araña de Rincón)",
+        category: "alergias",
+        categoryLabel: "Alergias, RAM & Misceláneas",
+        color: "#3b82f6",
+        eunacom: { diag: "Específico / Sospecha", tto: "Inicial / Completo", seg: "Completo / Derivar" },
+        fisiopatologia: "Envenenamiento por inoculación de la toxina <strong>Esfingomielinasa D</strong> de la araña de rincón (<em>Loxosceles laeta</em>). Provoca daño endotelial microvascular directo, vasculitis necrotizante trombosante masiva y hemólisis intravascular en formas viscerales.",
+        clinica: [
+          "Antecedente de mordedura nocturna o al vestirse (sensación de lancetazo o dolor punzante urente).",
+          "<strong>Loxoscelismo Cutáneo Puro (90% de los casos):</strong><br>• Entre las 24 y 48 horas se consolida la <strong>Placa Livedoide Patognomónica</strong>.<br>• <strong>Tríada cromática característica:</strong> Centro azul/grisáceo oscuro (necrosis e isquemia), halo pálido blanco intermedio (vasoconstricción) y halo periférico eritematoso rojo (edema e inflamación).<br>• Evoluciona a flictenas hemorrágicas y escara necrótica dura que se desprende en 3 a 6 semanas dejando una úlcera profunda.",
+          "<strong>Loxoscelismo Cutáneo-Visceral (10% de los casos - RIESGO VITAL):</strong><br>• Ocurre en las primeras 12 a 24 horas postmordedura.<br>• <strong>Signo de alarma inicial cardinal: HEMATURIA / HEMOGLOBINURIA precoz (orina color 'coca-cola')</strong>.<br>• Hemólisis intravascular masiva, anemia aguda severa, ictericia, falla renal aguda oligoanúrica, coagulación intravascular diseminada (CID) y shock."
+        ],
+        diagnostico: [
+          "Clínico y anamnesis ambiental/doméstica.",
+          "<strong>EXAMEN OBLIGATORIO URGENTE A TODO PACIENTE EN PRIMERAS 48 H: Examen de orina completa</strong> buscando hematuria/hemoglobinuria.",
+          "Laboratorio seriado: Hemograma con recuento de plaquetas (anemia hemolítica, trombocitopenia), pruebas de función renal (creatinina, nitrógeno ureico), pruebas hepáticas, bilirrubina y pruebas de coagulación."
+        ],
+        tratamiento: {
+          general: [
+            "Hielo local intermitente inmediato (el frío inactiva parcialmente la actividad enzimática de la esfingomielinasa D).",
+            "Reposo absoluto y elevación de la extremidad afectada.",
+            "Profilaxis antitetánica al día."
+          ],
+          primera: [
+            "<strong>Loxoscelismo cutáneo simple:</strong><br>• Manejo ambulatorio con analgesia: Paracetamol + AINEs o Tramadol según intensidad del dolor.<br>• Antihistamínicos orales (Clorfenamina o Cetirizina) para el prurito.<br>• Debridamiento quirúrgico de la escara <strong>SOLO DESPUÉS DE QUE ESTÉ COMPLETAMENTE DELIMITADA (semanas 3 a 4)</strong>; nunca intervenir precozmente.",
+            "<strong>Loxoscelismo Cutáneo-Visceral (EMERGENCIA MÉDICA):</strong><br>• <strong>HOSPITALIZACIÓN INMEDIATA EN UCI/UTI</strong>.<br>• Hidratación parenteral vigorosa con solución fisiológica para forzar diuresis y prevenir bloqueo tubular por hemoglobina.<br>• Corticoides sistémicos: Metilprednisolona 1-2 mg/kg/día o Hidrocortisona EV."
+          ],
+          segunda: [
+            "Transfusión de glóbulos rojos concentrados si hay anemia severa refractaria.",
+            "Hemodiálisis precoz en caso de insuficiencia renal aguda anúrica."
+          ],
+          derivacion: [
+            "Cualquier sospecha de compromiso visceral (orina oscura, fiebre, ictericia, compromiso del estado general): <strong>HOSPITALIZACIÓN DE URGENCIA INMEDIATA</strong>.",
+            "Úlcera residual extensa que requiera injerto dermoepidérmico por cirugía plástica."
+          ]
+        },
+        differentials: [
+          { id: "celulitis_erisipela", pearl: "La celulitis es eritematosa difusa y caliente sin placa livedoide tricolor central con flictenas hemorrágicas ni necrosis isquémica rápida." },
+          { id: "herpes_simple_zoster", pearl: "El zóster es unilateral en dermatoma con racimos de vesículas claras; no da placa necrótica violácea ni orinas oscuras por hemólisis." }
+        ]
       }
     ];
 
@@ -1530,138 +1908,12 @@
       });
     });
 
-    /* Detailed Pairwise Differential Comparison Data for EUNACOM */
-    const PAIRWISE_COMPARISONS = {
-      "dermatitis_atopica<->dc_alergica": {
-        common: [
-          "Ambas son dermatosis eccematosas con prurito intenso, eritema, edema y vesiculación inicial seguidas de descamación y liquenificación por rascado crónico.",
-          "Histológicamente cursan con espongiosis epidérmica e infiltrado inflamatorio de linfocitos T.",
-          "Responden favorablemente en fase aguda al uso de corticoides tópicos y emolientes de mantenimiento."
-        ],
-        diffA: [
-          "<strong>Mecanismo y causa:</strong> Trastorno genético endógeno constitucional con alteración de filagrina y barrera cutánea sin necesidad de un hapteno químico externo.",
-          "<strong>Distribución según edad:</strong> Respeta triángulo nasolabial en lactantes (mejillas y extensoras); flexuras (pliegues antecubitales y poplíteos) en niños mayores y adultos.",
-          "<strong>Diagnóstico y Parche:</strong> Criterios clínicos (Hanifin & Rajka / Británicos), atopia familiar; el Patch test suele ser <em>negativo</em> o inespecífico.",
-          "<strong>Curso:</strong> Crónico, recidivante, asociado a asma, rinitis y xerosis generalizada."
-        ],
-        diffB: [
-          "<strong>Mecanismo y causa:</strong> Hipersensibilidad retardada tipo IV gatillada por un antígeno externo específico (níquel, perfume, cromo, plantas como litre) tras sensibilización previa.",
-          "<strong>Distribución anatómica:</strong> Patrón sugerente no fisiológico que coincide con el uso de un objeto (aros en lóbulos, botón del pantalón en ombligo, muñeca por reloj), pero que <em>sobrepasa los bordes</em> del contacto.",
-          "<strong>Diagnóstico y Parche:</strong> <strong>Test de Parche (Patch Test) positivo</strong> con lectura a las 48 h y 72-96 h.",
-          "<strong>Curso:</strong> Remite al identificar y cesar de forma absoluta el contacto con el hapteno causal."
-        ]
-      },
-      "dermatitis_atopica<->dc_irritativa": {
-        common: [
-          "Ambas cursan con disrupción de la barrera cutánea, eritema, sequedad extrema y descamación.",
-          "Ambas se benefician de la lubricación intensiva con cremas emolientes y uso de limpiadores syndet."
-        ],
-        diffA: [
-          "<strong>Mecanismo:</strong> Inmunológico Th2, hiperreactividad con prurito intenso como síntoma rey.",
-          "<strong>Topografía:</strong> Pliegues flexurales, cara, extremidades; antecedentes de atopia personal/familiar.",
-          "<strong>Lesión:</strong> Eccema con liquenificación secundaria al rascado."
-        ],
-        diffB: [
-          "<strong>Mecanismo:</strong> No inmunológico (efecto citotóxico directo por agua, jabones alcalinos, solventes o roce continuo). Afecta a cualquier persona con exposición suficiente.",
-          "<strong>Topografía y Síntoma:</strong> Confinada <em>estrictamente</em> al sitio de contacto directo (clásico en <strong>dorso de manos</strong>). Síntoma dominante: <strong>ardor, quemazón y dolor por fisuras</strong> antes que prurito puro.",
-          "<strong>Evolución:</strong> Mejora de inmediato aislando la piel con guantes de nitrilo/vinilo y barreras de zinc."
-        ]
-      },
-      "dermatitis_atopica<->dermatitis_seborreica": {
-        common: [
-          "Ambas son causas mayores de dermatitis descamativa en lactantes y adultos.",
-          "Ambas pueden comprometer cara y cuero cabelludo con eritema y descamación."
-        ],
-        diffA: [
-          "<strong>Edad de inicio y clínica en lactante:</strong> Suele iniciar después de los <strong>3 a 6 meses de vida</strong>. <strong>Prurito severo e incoercible</strong>.",
-          "<strong>Topografía facial:</strong> Toma mejillas y frente pero <strong>respeta estrictamente el triángulo centrofacial nasolabial</strong>.",
-          "<strong>Área del pañal:</strong> La DA clásicamente <strong>respeta la zona del pañal</strong> en lactantes."
-        ],
-        diffB: [
-          "<strong>Edad de inicio y clínica en lactante:</strong> Inicia muy precozmente (desde la 2ª a 4ª semana de vida). <strong>Prurito escaso o ausente</strong> (buen estado general).",
-          "<strong>Topografía y escama:</strong> Placas eritematosas cubiertas de <strong>escamas untuosas y amarillentas grasosas</strong> en fontanela/vértex (costra láctea) y surco nasogeniano.",
-          "<strong>Área del pañal y pliegues:</strong> Compromete con frecuencia el fondo de pliegues inguinales, axilares y retroauriculares."
-        ]
-      },
-      "dermatitis_atopica<->escabiosis": {
-        common: [
-          "Ambas causan prurito feroz con excoriaciones, riesgo de impetiginización bacteriana secundaria y eccema.",
-          "En niños pequeños ambas pueden comprometer palmas y plantas."
-        ],
-        diffA: [
-          "<strong>Epidemiología:</strong> Trastorno constitucional no contagioso, antecedentes familiares de atopia pero no brotes epidémicos de picazón.",
-          "<strong>Lesiones y zonas:</strong> Compromete pliegues flexurales típicos; xerosis cutánea difusa; respeta genitales masculinos; no presenta surcos acarinos."
-        ],
-        diffB: [
-          "<strong>Epidemiología y ritmo:</strong> Parasitosis muy contagiosa por <em>Sarcoptes scabiei</em>; <strong>prurito de exacerbación nocturna</strong> que afecta a varios miembros de la familia o contactos íntimos de cama.",
-          "<strong>Lesión patognomónica y zonas:</strong> <strong>Surco acarino</strong> y vesícula perlada en espacios interdigitales de manos, muñecas y <strong>nódulos escabióticos violáceos en genitales masculinos</strong> (escroto/pene)."
-        ]
-      },
-      "dermatitis_atopica<->psoriasis": {
-        common: [
-          "Enfermedades inflamatorias cutáneas eritematodescamativas crónicas mediadas por linfocitos con brotes y remisiones.",
-          "Ambas pueden comprometer cuero cabelludo y extremidades."
-        ],
-        diffA: [
-          "<strong>Topografía típica:</strong> En niños y adultos toma <strong>superficies flexoras</strong> (hueco poplíteo, fosa antecubital).",
-          "<strong>Semiología de la placa:</strong> Bordes difusos mal delimitados, descamación fina o húmeda y prurito intenso.",
-          "<strong>Respuesta a corticoides:</strong> Responde bien a corticoides tópicos según pauta."
-        ],
-        diffB: [
-          "<strong>Topografía típica:</strong> Toma <strong>superficies extensoras</strong> (codos, rodillas, región lumbosacra) y corona del cuero cabelludo.",
-          "<strong>Semiología de la placa:</strong> Placas rojas de <strong>bordes netos hiperdelimitados</strong> con <strong>escamas blanco-nacaradas o plateadas gruesas</strong> y secas; Signo del rocío sangrante de Auspitz positivo. Prurito leve o nulo.",
-          "<strong>Alerta EUNACOM:</strong> PROHIBIDO corticoides orales sistémicos (gatillan rebote severo a psoriasis pustulosa de von Zumbusch)."
-        ]
-      },
-      "dermatitis_panal<->dermatitis_seborreica": {
-        common: [
-          "Ambas son causas frecuentes del síndrome de dermatitis del pañal en lactantes menores de 1 año con eritema en el área perineal."
-        ],
-        diffA: [
-          "<strong>DPI / Candidiasis:</strong> Si es irritativa, toma solo zonas convexas y respeta el fondo de pliegues. Si es candidiásica, toma pliegues con eritema rojo brillante y pústulas satélites.",
-          "<strong>Topografía a distancia:</strong> Confinada al área cubierta por el pañal (salvo muguet oral o pezón materno concomitante)."
-        ],
-        diffB: [
-          "<strong>Dermatitis Seborreica:</strong> Placas asalmonadas con escamas grasosas en el fondo de los pliegues inguinales.",
-          "<strong>Topografía a distancia:</strong> Se asocia casi invariablemente a costra láctea en vértex, descamación en cejas, surcos nasogenianos y pliegues retroauriculares."
-        ]
-      },
-      "psoriasis<->pitiriasis_rosada": {
-        common: [
-          "Dermatosis eritematoescamosas del tronco en personas jóvenes con placas redondeadas/ovales rosadas."
-        ],
-        diffA: [
-          "<strong>Evolución y cronicidad:</strong> Enfermedad crónica recidivante con placas gruesas y escamas plateadas.",
-          "<strong>Morfología y raspado:</strong> Bordes netos sobreelevados, raspado metódico de Brocq y Auspitz positivo; compromiso ungueal frecuente (pitting)."
-        ],
-        diffB: [
-          "<strong>Evolución y cronicidad:</strong> Exantema agudo benigno y <strong>autolimitado que desaparece espontáneamente en 4 a 8 semanas</strong> sin tratamiento.",
-          "<strong>Morfología y raspado:</strong> Inicia con una <strong>Placa heráldica</strong> única solitaria seguida de placas secundarias alineadas en el tronco siguiendo las líneas de Langer (<strong>patrón en árbol de navidad</strong>) con collarete descamativo interno periférico."
-        ]
-      },
-      "celulitis_erisipela<->dc_alergica": {
-        common: [
-          "Placa eritematosa aguda con edema, calor local y tumefacción en extremidades o cara."
-        ],
-        diffA: [
-          "<strong>Etiología y clínica:</strong> Infección bacteriana profunda (Streptococcus pyogenes / S. aureus). Unilateral, comienzo agudo con <strong>fiebre alta, calofríos y dolor local intenso exquisito</strong>.",
-          "<strong>Bordes:</strong> En erisipela, borde neto en escalón sobreelevado.",
-          "<strong>Tratamiento:</strong> Antibióticos sistémicos (penicilina o cefadroxilo) y reposo con extremidad elevada."
-        ],
-        diffB: [
-          "<strong>Etiología y clínica:</strong> Inflamación alérgica por contactante químico. <strong>Prurito incoercible y vesículas</strong> sin fiebre ni calofríos ni leucocitosis.",
-          "<strong>Bordes:</strong> Lesión que sobrepasa el sitio del contactante pero sin escalón erisipelatoso ni compromiso linfangítico.",
-          "<strong>Tratamiento:</strong> Corticoides tópicos/orales y cese del contactante."
-        ]
-      }
-    };
-
     /* Application State */
     let selectedNodeId = "dermatitis_atopica";
     let activeCategory = "all";
     let currentSearchTerm = "";
     let activeTab = "clinica";
-    let comparisonBasket = ["dermatitis_atopica", "dc_alergica"]; // Multi-selection list (up to 4 items)
+    let comparisonBasket = ["dermatitis_atopica", "dc_alergica"]; // Multi-selection list (unlimited)
     let d3Simulation = null;
     let d3Svg = null;
     let d3Zoom = null;
@@ -1674,13 +1926,8 @@
     function togglePathologyInBasket(id) {
       const idx = comparisonBasket.indexOf(id);
       if (idx > -1) {
-        // Remove
         comparisonBasket.splice(idx, 1);
       } else {
-        // Add (limit to 4)
-        if (comparisonBasket.length >= 4) {
-          comparisonBasket.shift(); // Remove oldest to make room
-        }
         comparisonBasket.push(id);
       }
       updateComparisonDock();
@@ -1707,11 +1954,11 @@
       if (comparisonBasket.length > 0) {
         dock.classList.remove("translate-y-28", "opacity-0", "pointer-events-none");
         dock.classList.add("translate-y-0", "opacity-100");
-        counterText.textContent = `${comparisonBasket.length} seleccionada${comparisonBasket.length > 1 ? "s" : ""} (máx 4)`;
+        counterText.textContent = `${comparisonBasket.length} seleccionada${comparisonBasket.length > 1 ? "s" : ""}`;
       } else {
         dock.classList.add("translate-y-28", "opacity-0", "pointer-events-none");
         dock.classList.remove("translate-y-0", "opacity-100");
-        counterText.textContent = `0 seleccionadas (máx 4)`;
+        counterText.textContent = `0 seleccionadas`;
       }
 
       chipsContainer.innerHTML = comparisonBasket.map(id => {
@@ -2382,6 +2629,20 @@
       renderListView();
       updateComparisonDock();
 
+      // Update total counter in UI
+      const totalCountBadge = document.getElementById("cat-total-count");
+      if (totalCountBadge) totalCountBadge.textContent = DERMA_DATA.length;
+
+      // Close button for the dismissible graph hint
+      const closeGraphHintBtn = document.getElementById("close-graph-hint");
+      const graphHint = document.getElementById("graph-hint");
+      if (closeGraphHintBtn && graphHint) {
+        closeGraphHintBtn.addEventListener("click", () => {
+          graphHint.classList.add("opacity-0", "pointer-events-none");
+          setTimeout(() => graphHint.remove(), 250);
+        });
+      }
+
       // View switcher
       const modeGraphBtn = document.getElementById("mode-graph");
       const modeListBtn = document.getElementById("mode-list");
@@ -2436,7 +2697,10 @@
 
       tabBtns.clinica.addEventListener("click", () => switchTab("clinica"));
       tabBtns.tratamiento.addEventListener("click", () => switchTab("tratamiento"));
-      tabBtns.diferenciales.addEventListener("click", () => switchTab("diferenciales"));
+      tabBtns.diferenciales.addEventListener("click", () => {
+        switchTab("diferenciales");
+        updateDifferentialTabContent(selectedNodeId);
+      });
 
       // Search input handler
       const searchInput = document.getElementById("search-input");
@@ -2461,23 +2725,32 @@
         renderListView();
       });
 
-      // Category Drawer Toggle
+      // Category Drawer Toggle with close button
       const filterMenuBtn = document.getElementById("filter-menu-btn");
       const categoryDrawer = document.getElementById("category-filter-drawer");
+      const closeCategoryDrawerBtn = document.getElementById("close-category-drawer");
       let categoryDrawerOpen = false;
 
-      filterMenuBtn.addEventListener("click", () => {
-        categoryDrawerOpen = !categoryDrawerOpen;
+      function toggleCategoryDrawer(open) {
+        categoryDrawerOpen = typeof open === "boolean" ? open : !categoryDrawerOpen;
         if (categoryDrawerOpen) {
           categoryDrawer.classList.remove("-translate-y-full", "opacity-0", "pointer-events-none");
           categoryDrawer.classList.add("translate-y-0", "opacity-100");
           filterMenuBtn.classList.add("bg-cyan-600", "text-white");
+          // If the hint is still present, temporarily hide it to keep canvas spotless
+          if (graphHint) graphHint.classList.add("opacity-25");
         } else {
           categoryDrawer.classList.add("-translate-y-full", "opacity-0", "pointer-events-none");
           categoryDrawer.classList.remove("translate-y-0", "opacity-100");
           filterMenuBtn.classList.remove("bg-cyan-600", "text-white");
+          if (graphHint) graphHint.classList.remove("opacity-25");
         }
-      });
+      }
+
+      filterMenuBtn.addEventListener("click", () => toggleCategoryDrawer());
+      if (closeCategoryDrawerBtn) {
+        closeCategoryDrawerBtn.addEventListener("click", () => toggleCategoryDrawer(false));
+      }
 
       // Category Pills filter
       document.querySelectorAll(".cat-pill").forEach(btn => {
@@ -2528,7 +2801,7 @@
           updateComparisonDock();
           updateGraphVisuals();
           renderListView();
-          if (activeTab === "diferenciales") selectPathology(selectedNodeId);
+          if (activeTab === "diferenciales") updateDifferentialTabContent(selectedNodeId);
         });
       }
 

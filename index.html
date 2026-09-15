@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dermatología - Red Interactiva de Patologías</title>
+  <title>Dermatología EUNACOM - Red Interactiva de Patologías</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- D3.js CDN for force-directed graph -->
@@ -63,7 +63,7 @@
       </div>
       <div>
         <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
-          DermaNet
+          DermaNet EUNACOM
           <span class="text-[10px] uppercase font-bold tracking-widest bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">Médico General</span>
         </h1>
         <p class="text-[11px] text-slate-400">Red interconectada de diagnósticos diferenciales y guías terapéuticas</p>
@@ -544,6 +544,7 @@
         differentials: [
           { id: "dc_alergica", pearl: "Aparece tras contactante identificado, patrón delimitado a zonas insólitas (lóbulo de oreja, botón de pantalón), prueba de parche positiva." },
           { id: "dc_irritativa", pearl: "No inmunológica, confinada al sitio directo del químico o agua constante, dorso de manos, sin historia atópica." },
+          { id: "eccema_numular", pearl: "Placas discoides en 'moneda' bien delimitadas en extremidades asociadas a xerosis; la DA clásica afecta pliegues flexurales difusos." },
           { id: "dermatitis_seborreica", pearl: "Escamas grasosas amarillentas en cuero cabelludo, cejas, surcos nasogenianos. En lactantes compromete pliegues inguinales (la DA los respeta en lactantes)." },
           { id: "escabiosis", pearl: "Prurito nocturno familiar, surcos acarinos interdigitales, genitales, sin xerosis previa obligada." },
           { id: "psoriasis", pearl: "Placas eritematosas con escamas plateadas gruesas en caras extensoras (codos, rodillas) y signo de Auspitz; no suele ser intensamente pruriginosa." }
@@ -675,6 +676,54 @@
         ]
       },
       {
+        id: "eccema_numular",
+        name: "Eccema Numular (Dermatitis Numular)",
+        category: "eczemas",
+        categoryLabel: "Eczemas & Dermatitis",
+        color: "#ec4899",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo / Derivar" },
+        fisiopatologia: "Dermatitis recurrente caracterizada por disfunción de barrera y xerosis intensa (frecuente en adultos y adultos mayores o clima frío/invierno), con colonización o sensibilización secundaria a foco bacteriano por <em>Staphylococcus aureus</em>. Puede manifestarse aisladamente o en el contexto de dermatitis atópica de base.",
+        clinica: [
+          "<strong>Morfología cardinal patognomónica:</strong> Placas eccematosas o liquenificadas en <strong>forma circular o discoide ('numular': forma de moneda)</strong> de 1 a 5 cm de diámetro.",
+          "<strong>Fase aguda:</strong> Placa eritematosa exudativa ('húmeda') con microvesículas agrupadas y costras melicéricas por rascado o impetiginización.",
+          "<strong>Fase crónica:</strong> Placas secas, descamativas, engrosadas y liquenificadas.",
+          "<strong>Topografía típica:</strong> Predomina en extremidades (cara anterior y lateral de piernas en 1/3 medio, dorso de manos, antebrazos) y tronco. Habitualmente lesiones múltiples, simétricas y <strong>muy pruriginosas</strong>."
+        ],
+        diagnostico: [
+          "Diagnóstico fundamentalmente clínico por la morfología típica en moneda sin centro aclarado.",
+          "<strong>Regla de descarte EUNACOM obligada:</strong> Examen directo con KOH al 10-20% negativo para descartar <em>Tinea Corporis</em> ante cualquier placa solitaria o resistente.",
+          "Cultivo y antibiograma solo si hay signos francos de impetiginización/sobreinfección purulenta."
+        ],
+        tratamiento: {
+          general: [
+            "<strong>Manejo riguroso de la xerosis (pilar clave):</strong> Hidratación intensiva diaria obligatoria con Receta Magistral de Novobase II (o crema base con urea 10%) en todo el cuerpo inmediatamente posbaño.",
+            "Baños cortos con agua tibia (evitar agua caliente), sustitutos de jabón syndet y secado por contacto suave sin frotar con toallas o esponjas.",
+            "Educación al paciente sobre cronicidad y prevención de recidivas en invierno."
+          ],
+          primera: [
+            "<strong>Corticoides tópicos de alta potencia (1ª línea):</strong><br>• Clobetasol propionato 0.05% crema 2 veces al día por 7 días, luego 1 vez al día por 7 días más.<br>• O Betametasona dipropionato 0.05% crema cada 12 h por 10 a 14 días.",
+            "<strong>Control sintomático del prurito:</strong><br>• Clorfenamina 4 mg cada 12 h VO (o Hidroxicina 25 mg noche) por 7 a 10 días.",
+            "<strong>Si hay sospecha o confirmación de sobreinfección por S. aureus:</strong><br>• Cefadroxilo 500 mg cada 12 h VO por 7 a 14 días.<br>• O Cloxacilina 500 mg cada 6 h VO por 7 a 10 días."
+          ],
+          segunda: [
+            "<strong>Casos graves, extensos o refractarios:</strong><br>• Prednisona oral matinal en pauta descendente: 40 mg/día por 3 días, luego 20 mg/día por 3 días, luego 10 mg/día por 3 días (siempre en la mañana).",
+            "Inhibidores tópicos de la calcineurina (Tacrolimus 0.1% ungüento) como terapia de mantenimiento ahorradora de esteroides.",
+            "Fototerapia NB-UVB en dermatología."
+          ],
+          derivacion: [
+            "Refractariedad a corticoides potentes y medidas de barrera tras 3 a 4 semanas.",
+            "Casos generalizados que requieran fototerapia o inmunosupresores sistémicos (Metotrexato)."
+          ]
+        },
+        differentials: [
+          { id: "tinea_corporis", pearl: "La tiña tiene borde activo descamativo sobreelevado con aclaramiento central curado y KOH positivo; el eccema numular es homogéneo en toda la moneda, no tiene centro sano y el KOH es negativo." },
+          { id: "dermatitis_atopica", pearl: "La DA clásica se presenta en pliegues flexurales y mejillas; el eccema numular forma placas discoides redondeadas independientes en piernas o tronco." },
+          { id: "psoriasis", pearl: "La psoriasis vulgar o guttata presenta escamas blanco-nacaradas gruesas secas y signo de Auspitz; el eccema numular es eccematoso, microvesiculoso y pruriginoso." },
+          { id: "impetigo", pearl: "El impétigo es una infección primaria periorificial con costras melicéricas; el eccema numular es un patrón inflamatorio en moneda que puede impetiginizarse secundariamente." },
+          { id: "dc_alergica", pearl: "La dermatitis de contacto tiene un contactante desencadenante claro, bordes mal delimitados que sobrepasan el área de contacto y no suele formar placas en moneda simétricas en piernas." }
+        ]
+      },
+      {
         id: "dermatitis_seborreica",
         name: "Dermatitis Seborreica",
         category: "eritematosas",
@@ -756,6 +805,7 @@
         },
         differentials: [
           { id: "pitiriasis_rosada", pearl: "Medallón heráldico inicial seguido de lesiones en árbol de navidad en tronco; descamación fina en collarete periférico interno, autorresolutiva en 6-8 semanas." },
+          { id: "eccema_numular", pearl: "Placas en moneda eritematosas exudativas o costrosas intensamente pruriginosas en piernas; sin escamas plateadas de cera ni signo de Auspitz." },
           { id: "tinea_corporis", pearl: "Placa única anular con borde activo vesículo-escamoso y centro curado; no es simétrica ni compromete codos/rodillas." },
           { id: "liquen_plano", pearl: "4P: Pápulas Poligonales Purpúricas Pruriginosas con estrías de Wickham en cara anterior de muñecas y tobillos (flexoras, no extensoras)." },
           { id: "sifilis_secundaria", pearl: "Roséola sifilítica y sifílides papulosas cobrizas con afectación palmoplantar y 'collar de Biett', serología VDRL reactiva a títulos altos." }
@@ -1098,6 +1148,7 @@
         },
         differentials: [
           { id: "pitiriasis_rosada", pearl: "La placa heráldica de PR tiene collarete escamativo interno orientado hacia adentro, no avanza activamente hacia afuera y el KOH es negativo." },
+          { id: "eccema_numular", pearl: "Placas redondeadas en moneda completas y homogéneas sin aclaramiento central sano y con examen directo con KOH negativo." },
           { id: "psoriasis", pearl: "Psoriasis anular no tiene aclaramiento central verdadero, tiene escamas plateadas gruesas y KOH negativo." },
           { id: "dermatitis_panal", pearl: "La candidiasis en ingle sí toma el escroto intensamente y tiene pústulas satélites; la tiña cruris respeta escroto y tiene borde sobreelevado." }
         ]

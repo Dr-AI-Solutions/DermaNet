@@ -1,0 +1,2456 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dermatología EUNACOM - Red Interconectada</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- D3.js CDN for force-directed interactive graph -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <!-- Phosphor Icons CDN -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 1); }
+    @keyframes pulse-glow {
+      0%, 100% { filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6)); }
+      50% { filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.9)); }
+    }
+    .node-active-glow { animation: pulse-glow 2.5s infinite ease-in-out; }
+    .node-link { transition: stroke-opacity 0.3s, stroke-width 0.3s; }
+    
+    @media print {
+      body { background: #ffffff !important; color: #0f172a !important; }
+      header, #graph-container, #category-filter-drawer, #compare-dock, #help-modal, #pathology-drawer, .no-print {
+        display: none !important;
+      }
+      #comparator-modal {
+        position: static !important; display: block !important; background: transparent !important; padding: 0 !important;
+      }
+      #comparator-modal > div {
+        max-width: 100% !important; max-height: none !important; box-shadow: none !important; border: none !important; background: transparent !important;
+      }
+      #comparator-modal .bg-slate-950, #comparator-modal .bg-slate-900 {
+        background: #ffffff !important; color: #0f172a !important; border-color: #cbd5e1 !important;
+      }
+      #comparator-modal text, #comparator-modal span, #comparator-modal p, #comparator-modal td {
+        color: #0f172a !important;
+      }
+      .print-title {
+        display: block !important; font-size: 16pt; font-weight: bold; margin-bottom: 12px; color: #0f172a !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col overflow-hidden select-none">
+  <!-- Top Application Header -->
+  <header class="h-14 bg-slate-900/90 backdrop-blur border-b border-slate-800 flex items-center justify-between px-3 sm:px-4 z-20 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+        <i class="ph-bold ph-tree-structure text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+          DermaNet EUNACOM
+          <span class="text-[10px] uppercase font-bold tracking-widest bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">Médico General</span>
+        </h1>
+        <p class="text-[11px] text-slate-400 hidden sm:block">Red interconectada de diagnósticos diferenciales y guías terapéuticas</p>
+      </div>
+    </div>
+
+    <!-- Quick EUNACOM Competence Filters -->
+    <div class="hidden xl:flex items-center gap-1.5 bg-slate-950/70 p-1 rounded-xl border border-slate-800 text-xs">
+      <span class="text-[10px] text-slate-400 px-2 font-bold uppercase">Nivel:</span>
+      <button data-level="all" class="level-pill active px-2.5 py-0.5 rounded-lg bg-cyan-500 text-slate-950 font-bold transition">Todos</button>
+      <button data-level="aps" class="level-pill px-2.5 py-0.5 rounded-lg text-emerald-400 hover:bg-emerald-950/40 border border-transparent hover:border-emerald-700/50 transition flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span> APS (Tratar)
+      </button>
+      <button data-level="derivar" class="level-pill px-2.5 py-0.5 rounded-lg text-indigo-300 hover:bg-indigo-950/40 border border-transparent hover:border-indigo-700/50 transition flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-indigo-400"></span> Derivar Dermatólogo
+      </button>
+      <button data-level="urgencia" class="level-pill px-2.5 py-0.5 rounded-lg text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-700/50 transition flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> Urgencia Vital
+      </button>
+    </div>
+
+    <!-- Header Actions & Search -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="relative w-36 sm:w-60 md:w-72">
+        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <input 
+          id="search-input" 
+          type="text" 
+          placeholder="Buscar patología, síntoma o fármaco..." 
+          class="w-full pl-9 pr-8 py-1.5 bg-slate-800/80 border border-slate-700/80 rounded-lg text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
+        >
+        <button id="clear-search" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+          <i class="ph ph-x text-xs"></i>
+        </button>
+      </div>
+
+      <button id="filter-menu-btn" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs text-slate-200 transition">
+        <i class="ph-bold ph-faders"></i>
+        <span class="hidden sm:inline">Categorías</span>
+      </button>
+
+      <!-- Quick Comparison Header Button -->
+      <button id="header-compare-btn" class="relative hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg text-xs text-indigo-200 font-semibold transition">
+        <i class="ph-bold ph-scales"></i>
+        <span>Comparador (<span id="header-compare-count">0</span>)</span>
+      </button>
+
+      <!-- Mode Graph vs List -->
+      <div class="flex bg-slate-800 border border-slate-700 rounded-lg p-0.5 text-xs">
+        <button id="mode-graph" class="px-2.5 py-1 rounded bg-cyan-600 text-white font-medium flex items-center gap-1 transition">
+          <i class="ph-bold ph-graph"></i>
+          <span class="hidden md:inline">Red</span>
+        </button>
+        <button id="mode-list" class="px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 flex items-center gap-1 transition">
+          <i class="ph-bold ph-list-dashes"></i>
+          <span class="hidden md:inline">Lista</span>
+        </button>
+      </div>
+
+      <button id="help-btn" class="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 text-sm" title="Guía de Estudio">
+        <i class="ph ph-question"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="relative flex-1 flex overflow-hidden">
+    <!-- Category Filter Drawer -->
+    <div id="category-filter-drawer" class="absolute top-0 left-0 right-0 z-30 bg-slate-900/98 border-b border-slate-800 px-4 py-2.5 flex flex-wrap items-center gap-2 text-xs backdrop-blur-md shadow-2xl transition-all duration-200 -translate-y-full opacity-0 pointer-events-none">
+      <div class="flex items-center justify-between w-full sm:w-auto gap-2">
+        <span class="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Filtrar Eje Nosológico:</span>
+        <button id="close-category-drawer" class="sm:hidden text-slate-400 hover:text-white p-1 rounded">
+          <i class="ph-bold ph-x text-xs"></i>
+        </button>
+      </div>
+      <button data-cat="all" class="cat-pill active px-3 py-1 rounded-full bg-cyan-500 text-slate-950 font-bold transition">Todas (<span id="cat-total-count">24</span>)</button>
+      <button data-cat="eczemas" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-pink-400 border border-pink-500/30 transition">Eczemas & Dermatitis</button>
+      <button data-cat="infecciosas" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 transition">Infecciones & Micosis</button>
+      <button data-cat="eritematosas" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 transition">Eritematoescamosas</button>
+      <button data-cat="anexos" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-purple-400 border border-purple-500/30 transition">Acné, Rosácea & Folículo</button>
+      <button data-cat="tumores" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 transition">Oncología & Tumores</button>
+      <button data-cat="alergias" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/30 transition">Alergias, RAM & Urgencias</button>
+    </div>
+
+    <!-- MAIN GRAPH AREA -->
+    <div id="graph-container" class="relative flex-1 h-full w-full bg-gradient-to-b from-slate-950 via-slate-900/60 to-slate-950 overflow-hidden">
+      <svg id="network-svg" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
+
+      <!-- Graph Canvas Controls Overlay -->
+      <div class="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5 bg-slate-900/80 backdrop-blur p-1 rounded-xl border border-slate-800 shadow-xl">
+        <button id="zoom-in" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Acercar">
+          <i class="ph ph-plus text-base"></i>
+        </button>
+        <button id="zoom-out" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Alejar">
+          <i class="ph ph-minus text-base"></i>
+        </button>
+        <button id="zoom-reset" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Centrar Red">
+          <i class="ph ph-arrows-out-cardinal text-base"></i>
+        </button>
+      </div>
+
+      <!-- Active Connection Helper Badge -->
+      <div id="graph-hint" class="absolute top-3 left-3 z-10 bg-slate-900/90 backdrop-blur border border-slate-800/90 px-3 py-1.5 rounded-xl shadow-lg text-[11px] text-slate-300 flex items-center gap-2 max-w-sm transition-opacity duration-200">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping shrink-0"></span>
+        <span class="flex-1">Haz clic en un globo para examinar diagnósticos diferenciales y tratamientos con dosis</span>
+        <button id="close-graph-hint" class="text-slate-400 hover:text-white p-0.5 rounded transition" title="Ocultar">
+          <i class="ph ph-x text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Legend Overlay -->
+      <div class="absolute bottom-4 right-4 z-10 hidden lg:flex items-center gap-3 bg-slate-900/90 backdrop-blur px-3 py-2 rounded-xl border border-slate-800 text-[10px] text-slate-300 shadow-xl">
+        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span> Eczemas</div>
+        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Infecciones / Micosis</div>
+        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Eritematoescamosas</div>
+        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Anexos</div>
+        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Tumores</div>
+        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Alergias / RAM</div>
+      </div>
+    </div>
+
+    <!-- LIST VIEW AREA (Alternative mode) -->
+    <div id="list-container" class="hidden flex-1 h-full overflow-y-auto p-4 sm:p-6 bg-slate-950">
+      <div class="max-w-5xl mx-auto space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400">Catálogo Dermatológico EUNACOM</h2>
+          <span id="list-count" class="text-xs text-cyan-400 font-semibold bg-cyan-950/60 border border-cyan-800/60 px-2.5 py-0.5 rounded-full">24 Patologías</span>
+        </div>
+        <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </div>
+
+    <!-- CLINICAL SIDE DRAWER -->
+    <aside id="pathology-drawer" class="fixed lg:static top-14 bottom-0 right-0 w-full sm:w-[460px] lg:w-[490px] bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col z-30 transform transition-transform duration-300 translate-x-full lg:translate-x-0 select-text">
+      <!-- Drawer Header -->
+      <div class="p-4 border-b border-slate-800 flex items-start justify-between bg-slate-900/90 backdrop-blur sticky top-0 z-10">
+        <div class="space-y-1 pr-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span id="drawer-category-badge" class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-pink-500/20 text-pink-300 border border-pink-500/30">
+              Eczema
+            </span>
+            <span id="drawer-eunacom-badge" class="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              Diag: Específico | Tto: Completo
+            </span>
+            <span id="drawer-level-badge" class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              Manejo APS
+            </span>
+          </div>
+          <h2 id="drawer-title" class="text-lg font-extrabold text-white tracking-tight">Dermatitis Atópica</h2>
+          <p id="drawer-subtitle" class="text-xs text-slate-400 font-medium">Eczema pruriginoso crónico y recidivante</p>
+        </div>
+        <button id="close-drawer" class="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Drawer Tabs Navigation -->
+      <div class="flex border-b border-slate-800 bg-slate-950/50 text-xs px-2 overflow-x-auto">
+        <button id="tab-btn-clinica" class="tab-btn active py-2.5 px-3 font-semibold text-cyan-400 border-b-2 border-cyan-400 flex items-center gap-1.5 shrink-0 transition">
+          <i class="ph-bold ph-stethoscope"></i> Clínica & Diag.
+        </button>
+        <button id="tab-btn-tratamiento" class="tab-btn py-2.5 px-3 font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5 shrink-0 transition">
+          <i class="ph-bold ph-pill"></i> Tratamiento & Dosis
+        </button>
+        <button id="tab-btn-galeria" class="tab-btn py-2.5 px-3 font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5 shrink-0 transition">
+          <i class="ph-bold ph-image"></i> Atlas Semiológico
+        </button>
+        <button id="tab-btn-diferenciales" class="tab-btn py-2.5 px-3 font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5 shrink-0 transition">
+          <i class="ph-bold ph-arrows-split"></i> Diferenciales (<span id="diff-count">0</span>)
+        </button>
+      </div>
+
+      <!-- Drawer Scrollable Content -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        <!-- TAB 1: CLINICA Y DIAGNOSTICO -->
+        <div id="tab-panel-clinica" class="space-y-4">
+          <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-2">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+              <i class="ph-bold ph-certificate"></i> Exigencia EUNACOM & Competencias
+            </h4>
+            <div class="grid grid-cols-3 gap-2 text-center text-[10px]">
+              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                <span class="text-slate-400 block mb-0.5">Diagnóstico</span>
+                <span id="eunacom-diag" class="font-bold text-slate-200">Específico</span>
+              </div>
+              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                <span class="text-slate-400 block mb-0.5">Tratamiento</span>
+                <span id="eunacom-tto" class="font-bold text-slate-200">Completo</span>
+              </div>
+              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                <span class="text-slate-400 block mb-0.5">Seguimiento</span>
+                <span id="eunacom-seg" class="font-bold text-slate-200">Completo</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i class="ph-bold ph-dna"></i> Fisiopatología & Claves
+            </h4>
+            <p id="drawer-fisiopato" class="text-slate-300 leading-relaxed bg-slate-950/50 p-3 rounded-xl border border-slate-800/80"></p>
+          </div>
+
+          <div id="drawer-subtipos-wrapper" class="space-y-1.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <i class="ph-bold ph-git-fork"></i> Subtipos Clínicos & Complicaciones Mayores
+            </h4>
+            <div id="drawer-subtipos" class="space-y-1.5 bg-indigo-950/20 p-3 rounded-xl border border-indigo-900/40 text-slate-300"></div>
+          </div>
+
+          <div class="space-y-1.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i class="ph-bold ph-user-focus"></i> Cuadro Clínico & Topografía Típica
+            </h4>
+            <div id="drawer-clinica" class="text-slate-300 space-y-2 bg-slate-950/50 p-3 rounded-xl border border-slate-800/80"></div>
+          </div>
+
+          <div class="space-y-1.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i class="ph-bold ph-check-circle"></i> Criterios & Confirmación Diagnóstica
+            </h4>
+            <div id="drawer-diag-criterios" class="text-slate-300 bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 space-y-1"></div>
+          </div>
+        </div>
+
+        <!-- TAB 2: TRATAMIENTO Y DOSIS -->
+        <div id="tab-panel-tratamiento" class="hidden space-y-4">
+          <div class="space-y-1.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+              <i class="ph-bold ph-shield-check"></i> Medidas Generales / No Farmacológicas
+            </h4>
+            <div id="drawer-tto-general" class="text-slate-300 bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 space-y-1.5"></div>
+          </div>
+
+          <div class="space-y-1.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <i class="ph-bold ph-pill"></i> 1ª Línea Terapéutica (Dosis & Recetas Magistrales)
+            </h4>
+            <div id="drawer-tto-primera" class="text-slate-200 bg-emerald-950/20 p-3 rounded-xl border border-emerald-900/40 space-y-2 font-mono-code text-[11px]"></div>
+          </div>
+
+          <div class="space-y-1.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <i class="ph-bold ph-arrow-fat-line-up"></i> 2ª Línea & Casos Severos
+            </h4>
+            <div id="drawer-tto-segunda" class="text-slate-300 bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 space-y-1.5"></div>
+          </div>
+
+          <div class="space-y-1.5">
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+              <i class="ph-bold ph-warning"></i> Criterios de Derivación a Dermatología / Urgencia
+            </h4>
+            <div id="drawer-derivacion" class="text-rose-200/90 bg-rose-950/20 p-3 rounded-xl border border-rose-900/40 space-y-1 text-[11px]"></div>
+          </div>
+        </div>
+
+        <!-- TAB 3: ATLAS SEMIOLÓGICO -->
+        <div id="tab-panel-galeria" class="hidden space-y-4">
+          <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h4 class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                <i class="ph-bold ph-camera"></i> Atlas Semiológico Clínico
+              </h4>
+              <div class="flex items-center gap-1.5">
+                <!-- Dual mode toggle: Real Photo vs SVG Diagram -->
+                <div class="flex bg-slate-900 border border-slate-700 rounded-lg p-0.5 text-[10px]">
+                  <button id="view-mode-photo" class="px-2 py-0.5 rounded bg-cyan-600 text-white font-bold transition flex items-center gap-1">
+                    <i class="ph-bold ph-image"></i> Foto Real
+                  </button>
+                  <button id="view-mode-svg" class="px-2 py-0.5 rounded text-slate-400 hover:text-white transition flex items-center gap-1">
+                    <i class="ph-bold ph-vector-three"></i> Esquema SVG
+                  </button>
+                </div>
+                <label class="cursor-pointer text-[10px] text-indigo-300 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 px-2 py-1 rounded-lg flex items-center gap-1 transition">
+                  <i class="ph-bold ph-upload-simple"></i> Cargar foto
+                  <input type="file" id="local-image-input" accept="image/*" class="hidden">
+                </label>
+              </div>
+            </div>
+
+            <div id="atlas-display-box" class="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center p-1">
+              <!-- Real clinical photo container with no-referrer -->
+              <img id="atlas-real-img" referrerpolicy="no-referrer" class="w-full h-full object-contain rounded transition duration-200" alt="Fotografía clínica">
+              <!-- SVG diagram fallback container -->
+              <div id="atlas-svg-container" class="hidden w-full h-full flex items-center justify-center"></div>
+              <!-- Custom user uploaded image container -->
+              <img id="atlas-custom-img" class="hidden w-full h-full object-contain rounded" alt="Imagen personalizada">
+              <!-- Loading indicator overlay -->
+              <div id="atlas-loading" class="hidden absolute inset-0 bg-slate-950/75 flex items-center justify-center text-xs text-cyan-400 gap-2">
+                <i class="ph-bold ph-spinner animate-spin text-lg"></i>
+                <span>Cargando fotografía clínica...</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
+              <span id="atlas-source-tag"><i class="ph ph-shield-check text-emerald-400"></i> Wikimedia Commons / Creative Commons</span>
+              <a id="atlas-external-link" href="#" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline flex items-center gap-1">
+                <span>Ver en alta resolución</span> <i class="ph-bold ph-arrow-square-out text-xs"></i>
+              </a>
+            </div>
+
+            <p id="drawer-atlas-caption" class="text-xs text-slate-300 leading-relaxed font-medium bg-slate-900/80 p-2.5 rounded-lg border border-slate-800"></p>
+          </div>
+        </div>
+
+        <!-- TAB 4: DIAGNÓSTICOS DIFERENCIALES CONEXOS -->
+        <div id="tab-panel-diferenciales" class="hidden space-y-3">
+          <div class="p-2.5 rounded-xl bg-cyan-950/40 border border-cyan-800/40 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+              <div class="text-[11px]">
+                <span class="text-slate-400">Foco primario:</span>
+                <strong id="diff-anchor-title" class="text-white ml-1 font-semibold">Dermatitis Atópica</strong>
+              </div>
+            </div>
+            <button id="add-anchor-to-compare-btn" class="text-[10px] text-cyan-300 bg-cyan-900/60 hover:bg-cyan-800 px-2 py-0.5 rounded-md font-mono-code font-medium flex items-center gap-1 transition">
+              <i class="ph-bold ph-plus-circle"></i> Agregar al comparador
+            </button>
+          </div>
+
+          <p class="text-slate-400 text-[11px]">
+            Selecciona patologías para compararlas simultáneamente en la matriz sinóptica:
+          </p>
+          <div id="drawer-diff-list" class="space-y-2.5"></div>
+        </div>
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-[11px]">
+        <button id="btn-print-active-sheet" class="text-slate-400 hover:text-cyan-300 text-xs flex items-center gap-1 font-medium transition" title="Imprimir ficha de la patología">
+          <i class="ph-bold ph-printer"></i> Imprimir Ficha
+        </button>
+        <div class="flex items-center gap-2">
+          <button id="add-current-to-compare-btn" class="px-2.5 py-1.5 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-800 font-semibold flex items-center gap-1 transition text-xs">
+            <i class="ph-bold ph-plus"></i> Comparar
+          </button>
+          <button id="focus-graph-node-btn" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold flex items-center gap-1.5 transition">
+            <i class="ph-bold ph-crosshair"></i> Centrar en Red
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- FLOATING MULTI-COMPARE DOCK -->
+  <div id="compare-dock" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur-md border border-indigo-500/40 rounded-2xl px-4 py-2.5 shadow-2xl flex items-center gap-3.5 transition-all duration-300 translate-y-28 opacity-0 pointer-events-none no-print">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-sm font-bold">
+        <i class="ph-bold ph-scales"></i>
+      </div>
+      <div class="text-xs">
+        <span class="text-white font-bold block leading-none">Comparador Multi-Patología</span>
+        <span id="dock-counter-text" class="text-[11px] text-indigo-300">0 seleccionadas</span>
+      </div>
+    </div>
+
+    <!-- Chips Container -->
+    <div id="dock-chips-container" class="flex items-center gap-1.5 max-w-xs sm:max-w-md overflow-x-auto py-1"></div>
+
+    <div class="flex items-center gap-2 pl-2 border-l border-slate-800">
+      <button id="dock-clear-btn" class="px-2 py-1 text-slate-400 hover:text-slate-200 text-xs transition" title="Limpiar selección">
+        Limpiar
+      </button>
+      <button id="dock-open-matrix-btn" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 transition">
+        <span>Comparar</span>
+        <i class="ph-bold ph-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- HELP & STUDY GUIDE MODAL -->
+  <div id="help-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="ph-bold ph-info text-cyan-400"></i> ¿Cómo estudiar con DermaNet EUNACOM?
+        </h3>
+        <button id="close-help-modal" class="text-slate-400 hover:text-white">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+      <div class="text-xs text-slate-300 space-y-3 leading-relaxed">
+        <p>Herramienta interactiva para internado y preparación EUNACOM basada en los manuales docentes de la PUC y MINSAL.</p>
+        <ul class="space-y-2 list-disc list-inside text-slate-300">
+          <li><strong>24 Patologías nucleares:</strong> Cada globo es un diagnóstico evaluado.</li>
+          <li><strong>Comparador Multilateral:</strong> Contrasta 2, 3, 4 o más patologías a la vez sin restricciones.</li>
+          <li><strong>Atlas Semiológico Dual:</strong> Fotografías clínicas reales de Wikimedia Commons y esquemas SVG vectoriales con opción de subir fotos locales.</li>
+          <li><strong>Exportación a Impresión / PDF:</strong> Genera fichas limpias de examen con un solo clic.</li>
+        </ul>
+      </div>
+      <div class="pt-2 flex justify-end">
+        <button id="btn-understood" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl transition">
+          ¡A repasar!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MULTI-COMPARATOR MODAL -->
+  <div id="comparator-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 hidden select-text">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-6xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <!-- Comparator Header -->
+      <div class="p-4 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+            <i class="ph-bold ph-scales text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              Tabla Sinóptica de Diagnósticos Diferenciales
+              <span id="comp-modal-tag" class="text-[10px] text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800 font-mono-code">Frente a Frente</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Análisis comparativo de semiología, claves de descarte EUNACOM y farmacoterapia</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 no-print">
+          <button id="btn-print-comparator" class="px-3 py-1.5 rounded-lg bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-xs font-semibold flex items-center gap-1.5 transition">
+            <i class="ph-bold ph-printer"></i> Imprimir / PDF
+          </button>
+          <button id="close-comparator-btn" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+            <i class="ph-bold ph-x text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Comparator Body -->
+      <div class="flex-1 overflow-x-auto overflow-y-auto p-3 sm:p-5 space-y-4 text-xs">
+        <div class="hidden print-title">Resumen de Diagnósticos Diferenciales Dermatológicos - EUNACOM</div>
+        <div id="multi-comp-headers" class="flex gap-3 overflow-x-auto pb-2 min-w-full"></div>
+
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 text-cyan-400 font-bold uppercase tracking-wider text-[11px]">
+            <i class="ph-bold ph-intersect text-sm"></i>
+            <span>Puntos de Unión: ¿Por qué se consideran diagnósticos diferenciales en el examen?</span>
+          </div>
+          <div id="multi-comp-common" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2 text-slate-300 leading-relaxed"></div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
+            <i class="ph-bold ph-columns text-sm"></i>
+            <span>Matriz Comparativa de Descarte EUNACOM (Semiología, Topografía y Pruebas)</span>
+          </div>
+          <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+            <table class="w-full text-left border-collapse min-w-[700px]">
+              <tbody id="multi-comp-table-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider text-[11px]">
+            <i class="ph-bold ph-pill text-sm"></i>
+            <span>Conducta Terapéutica, Dosis Exactas de 1ª Línea y Contraindicaciones Críticas</span>
+          </div>
+          <div id="multi-comp-treatments" class="flex gap-3 overflow-x-auto pb-2 min-w-full"></div>
+        </div>
+      </div>
+
+      <!-- Comparator Footer -->
+      <div class="p-3 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0 no-print">
+        <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
+          <i class="ph ph-info text-cyan-400"></i>
+          <span>Usa el botón "Hacer foco" para trasladar el estudio y la red a esa patología</span>
+        </div>
+        <button id="comp-close-modal-footer-btn" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition">
+          Volver a la red
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Full EUNACOM & PUC Dermatologic Knowledge Base with Real Images & Diagrams */
+    const DERMA_DATA = [
+      {
+        id: "dermatitis_atopica",
+        name: "Dermatitis Atópica",
+        category: "eczemas",
+        categoryLabel: "Eczemas & Dermatitis",
+        color: "#ec4899",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Derivar / Completo", level: "aps" },
+        patognomonico: "Prurito incoercible con xerosis y eccema en pliegues flexurales (o mejillas y extensoras en lactante respetando área del pañal); antecedentes personales o familiares de atopia.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Atopic_dermatitis_flexural.jpg/800px-Atopic_dermatitis_flexural.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><circle cx="70" cy="70" r="38" fill="#f472b6" fill-opacity="0.25" stroke="#ec4899" stroke-width="2" stroke-dasharray="4,2"/><path d="M45,70 Q70,50 95,70 Q70,90 45,70" fill="none" stroke="#f43f5e" stroke-width="3"/><circle cx="160" cy="50" r="6" fill="#fb7185"/><circle cx="180" cy="75" r="8" fill="#fb7185"/><text x="70" y="125" fill="#fbcfe8" font-size="10" text-anchor="middle" font-weight="bold">Pliegue Flexural / Liquenificación</text></svg>`,
+        atlasCaption: "<strong>Dermatitis Atópica Flexural:</strong> Placa eritematosa liquenificada por rascado crónico en pliegues con xerosis cutánea.",
+        subtipos: [
+          "<strong>Fase Lactante (<2 años):</strong> Mejillas (respeta zona perioral y triángulo medio) y caras extensoras. Respeta área del pañal.",
+          "<strong>Fase Infantil (2 a 12 años):</strong> Placas en flexuras (fosas antecubitales y poplíteas) y cuello.",
+          "<strong>Fase Adulto:</strong> Liquenificación difusa, eccema de manos, dermatitis de párpados y perioral.",
+          "<strong>Complicación Mayor: Eczema Herpeticum (Kaposi):</strong> Sobreinfección por VHS con vesículas umbilicadas dolorosas y fiebre (URGENCIA: Aciclovir EV)."
+        ],
+        fisiopatologia: "Enfermedad inflamatoria crónica debida a disregulación inmune Th2 y alteración de proteínas de barrera epidérmica (mutaciones filagrina), generando pérdida de agua transepidérmica y penetración de alergenos.",
+        clinica: [
+          "Prurito intenso e incoercible + xerosis cutánea generalizada.",
+          "Lactante: mejillas y extensoras respetando triángulo medio.",
+          "Infantil/Adulto: pliegues flexurales y liquenificación por rascado."
+        ],
+        diagnostico: ["Criterios de Hanifin y Rajka o Criterios Británicos (Prurito + ≥3 criterios menores).", "Clínico; no requiere biopsia."],
+        tratamiento: {
+          general: ["Baños cortos (<5 min) agua tibia sin fricción.", "Emolientes densos abundantes diarios (Novobase II o urea al 10%).", "Ropa 100% algodón."],
+          primera: [
+            "Cara/Pliegues: Hidrocortisona 1% crema c/12 h por 5-7 días.",
+            "Tronco/Extremidades: Betametasona valerato 0.1% o Mometasona 0.1% c/12-24 h por 7-10 días.",
+            "Prurito nocturno: Clorfenamina 4 mg VO noche o Hidroxicina 25 mg noche."
+          ],
+          segunda: ["Pimecrolimus 1% o Tacrolimus 0.03-0.1% tópicos ahorradores de corticoides.", "Fototerapia NB-UVB o Dupilumab sistémico."],
+          derivacion: ["Eczema herpético febril (URGENCIA Aciclovir EV).", "Eritrodermia atópica o refractariedad a corticoides tópicos."]
+        },
+        differentials: [
+          { id: "dc_alergica", pearl: "Aparece tras contactante identificado, patrón delimitado a zonas insólitas (botón, aros), prueba de parche positiva." },
+          { id: "dc_irritativa", pearl: "No inmunológica, confinada al sitio directo del químico o agua constante, dorso de manos, sin historia atópica." },
+          { id: "eccema_numular", pearl: "Placas discoides en 'moneda' homogéneas en extremidades asociadas a xerosis; la DA clásica afecta pliegues flexurales difusos." },
+          { id: "dermatitis_seborreica", pearl: "Escamas grasosas amarillentas en cuero cabelludo, cejas, surcos nasogenianos. En lactantes compromete pliegues inguinales (la DA los respeta)." },
+          { id: "escabiosis", pearl: "Prurito nocturno familiar, surcos acarinos interdigitales, genitales, sin xerosis previa obligada." },
+          { id: "psoriasis", pearl: "Placas con escamas plateadas gruesas en caras extensoras (codos, rodillas) y signo de Auspitz; poco pruriginosa." }
+        ]
+      },
+      {
+        id: "dc_alergica",
+        name: "Dermatitis Contacto Alérgica (DCA)",
+        category: "eczemas",
+        categoryLabel: "Eczemas & Dermatitis",
+        color: "#ec4899",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo / Derivar", level: "aps" },
+        patognomonico: "Hipersensibilidad retardada Tipo IV con eritema, edema y microvesículas pruriginosas que SOBREPASAN los límites del contactante; confirmación Gold Standard con Test de Parche a las 48-72 h.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Allergic_contact_dermatitis_to_nickel.jpg/800px-Allergic_contact_dermatitis_to_nickel.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><circle cx="120" cy="65" r="22" fill="#cbd5e1" stroke="#94a3b8" stroke-width="2"/><circle cx="120" cy="65" r="42" fill="#ec4899" fill-opacity="0.35" stroke="#f43f5e" stroke-width="2" stroke-dasharray="3,3"/><text x="120" y="125" fill="#fbcfe8" font-size="9" text-anchor="middle">Lesión eccematosa sobrepasa límites de contacto</text></svg>`,
+        atlasCaption: "<strong>DCA por Níquel:</strong> Placa eccematosa que desborda el área del botón metálico.",
+        subtipos: ["DCA Aguda (eritema, edema, vesículas)", "DCA Crónica (liquenificación, fisuras)", "Fitofotodermatosis (contacto vegetal + sol)."],
+        fisiopatologia: "Hipersensibilidad retardada celular Tipo IV mediada por linfocitos T sensibilizados frente a haptenos (níquel, perfumes, cromo). Reacción 'todo o nada'.",
+        clinica: ["Eritema y vesículas pruriginosas que <strong>sobrepasan los límites</strong> del contacto original.", "Típico en lóbulos de oreja, ombligo, párpados o dorso de pies."],
+        diagnostico: ["Clínico + <strong>Test de Parche (Patch Test)</strong> con lectura a las 48 h y 72-96 h."],
+        tratamiento: {
+          general: ["Cese absoluto y permanente del alérgeno causal.", "Uso de guantes o barreras."],
+          primera: [
+            "Tronco/Manos: Clobetasol 0.05% o Betametasona dipropionato 0.05% c/12 h por 7-14 días.",
+            "Cara/Pliegues: Hidrocortisona 1% crema c/12 h por 5 días.",
+            "Compresas frías de suero fisiológico en fase exudativa."
+          ],
+          segunda: ["Prednisona oral 0.5 a 1 mg/kg/día por 7-10 días en descenso en casos extensos."],
+          derivacion: ["Test de parche para certificación médico-laboral o alérgeno desconocido."]
+        },
+        differentials: [
+          { id: "dc_irritativa", pearl: "Límites estrictos a la zona expuesta, sin vesiculación a distancia, ardor predomina sobre prurito, parche negativo." },
+          { id: "dermatitis_atopica", pearl: "Afección flexural simétrica difusa, antecedente de asma/rinitis, xerosis difusa." },
+          { id: "celulitis_erisipela", pearl: "Unilateral, calor, rubor, dolor agudo, fiebre y leucocitosis; sin vesículas alérgicas." }
+        ]
+      },
+      {
+        id: "dc_irritativa",
+        name: "Dermatitis Contacto Irritativa (DCI)",
+        category: "eczemas",
+        categoryLabel: "Eczemas & Dermatitis",
+        color: "#ec4899",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Daño citotóxico físico o químico directo no inmunológico ESTRICTAMENTE LIMITADO al área de contacto (típico dorso de manos); ardor y fisuración dolorosa con Test de Parche negativo.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Irritant_contact_dermatitis.jpg/800px-Irritant_contact_dermatitis.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><rect x="50" y="30" width="140" height="75" rx="8" fill="#f43f5e" fill-opacity="0.25" stroke="#f43f5e" stroke-width="2"/><path d="M70,45 L110,85 M130,40 L170,80" stroke="#ef4444" stroke-width="2"/><text x="120" y="125" fill="#cbd5e1" font-size="9" text-anchor="middle">Límites estrictos al sitio químico / jabón (dorso manos)</text></svg>`,
+        atlasCaption: "<strong>DCI de Manos:</strong> Eritema, sequedad y fisuras netamente circunscritas al dorso de las manos.",
+        subtipos: ["DCI Aguda (cáusticos)", "DCI Crónica Acumulativa (lavado frecuente en personal de salud)."],
+        fisiopatologia: "Daño citotóxico físico o químico directo sobre queratinocitos sin mecanismo inmune celular T.",
+        clinica: ["Eritema, xerosis, descamación y <strong>fisuras dolorosas</strong> estrictamente limitadas al área expuesta.", "Predomina ardor y quemazón más que prurito.", "Típico en <strong>dorso de las manos</strong>."],
+        diagnostico: ["Clínico y ocupacional. Test de parche negativo."],
+        tratamiento: {
+          general: ["Evitar o minimizar la exposición al agente irritante.", "Guantes de nitrilo con guante de algodón interior.", "Syndet pH 5.5."],
+          primera: ["Cremas de barrera: Óxido de zinc en pasta (Lassar) y ceramidas tras lavado.", "Hidrocortisona 1% crema o Betametasona valerato 0.05% c/12 h por 5-7 días."],
+          segunda: ["Urea al 10-20% ungüento con cura oclusiva nocturna."],
+          derivacion: ["Fracaso en ámbito laboral pese a protección."]
+        },
+        differentials: [
+          { id: "dc_alergica", pearl: "La alérgica sobrepasa los límites de exposición y pica con vesículas francas; la DCI arde y fisura." },
+          { id: "tinea_corporis", pearl: "Afectación en manos asimétrica (síndrome de dos pies y una mano), borde activo y KOH positivo." },
+          { id: "psoriasis", pearl: "Psoriasis palmar presenta placas eritematoescamosas gruesas bien delimitadas y pitting ungueal." }
+        ]
+      },
+      {
+        id: "dermatitis_panal",
+        name: "Dermatitis del Pañal (DPI)",
+        category: "eczemas",
+        categoryLabel: "Eczemas & Dermatitis",
+        color: "#ec4899",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Eritema en zonas convexas (glúteos/muslos) respetando pliegues inguinales en su forma irritativa pura; la sobreinfección por Cándida (>72 h) invade los pliegues con pústulas satélites.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Diaper_rash_candidiasis.jpg/800px-Diaper_rash_candidiasis.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><ellipse cx="70" cy="70" rx="35" ry="40" fill="#f43f5e" fill-opacity="0.3" stroke="#ec4899" stroke-width="2"/><ellipse cx="170" cy="70" rx="35" ry="40" fill="#f43f5e" fill-opacity="0.3" stroke="#ec4899" stroke-width="2"/><text x="120" y="25" fill="#38bdf8" font-size="8" text-anchor="middle">Pliegues respetados (forma irritativa)</text><text x="120" y="130" fill="#fbcfe8" font-size="9" text-anchor="middle">Zonas convexas de glúteos y muslos</text></svg>`,
+        atlasCaption: "<strong>Dermatitis del Pañal:</strong> Eritema confluente en zonas de oclusión y convexidades.",
+        subtipos: ["DPI Irritativa Pura (respeta pliegues)", "DPI Sobreinfectada por Cándida (compromete pliegues y genera lesiones satélites)."],
+        fisiopatologia: "Dermatitis irritativa primaria por oclusión, fricción, humedad y enzimas fecales. Si dura >72 h suele sobreinfectarse por <em>Candida albicans</em>.",
+        clinica: ["Irritativa: zonas convexas respetando fondo de pliegues.", "Candidiasis: fondo de pliegues tomado + pústulas satélites."],
+        diagnostico: ["Clínico en lactantes con pañal. Revisar muguet oral."],
+        tratamiento: {
+          general: ["Cambio frecuente de pañal.", "Aseo con agua tibia y aplicación de Pasta Lassar con óxido de zinc en cada cambio."],
+          primera: ["Pasta Lassar de barrera abundante.", "Candidiasis sobreagregada: Clotrimazol 1% crema c/12 h por 7-10 días cubierto con pasta de zinc."],
+          segunda: ["Nistatina tópica pomada c/8 h por 10 días."],
+          derivacion: ["Fracaso tras 14 días de antimicótico o úlceras necróticas profundas."]
+        },
+        differentials: [
+          { id: "intertrigo_candidiasico", pearl: "Toma activamente el fondo de los pliegues con fisura y pústulas satélites; la DPI simple respeta el fondo." },
+          { id: "dermatitis_seborreica", pearl: "Afecta pliegues con escamas grasosas asalmonadas y costra láctea en cuero cabelludo." },
+          { id: "dermatitis_atopica", pearl: "La DA clásica en lactante respeta el área del pañal." }
+        ]
+      },
+      {
+        id: "eccema_numular",
+        name: "Eccema Numular",
+        category: "eczemas",
+        categoryLabel: "Eczemas & Dermatitis",
+        color: "#ec4899",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo / Derivar", level: "aps" },
+        patognomonico: "Placas eccematosas o liquenificadas redondeadas homogéneas en forma de moneda ('numular') de 1-5 cm en extremidades con xerosis; KOH negativo.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Nummular_eczema.jpg/800px-Nummular_eczema.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><circle cx="70" cy="70" r="30" fill="#f43f5e" fill-opacity="0.4" stroke="#ec4899" stroke-width="2"/><circle cx="160" cy="70" r="24" fill="#f43f5e" fill-opacity="0.4" stroke="#ec4899" stroke-width="2"/><text x="120" y="125" fill="#fbcfe8" font-size="9" text-anchor="middle">Placas discoides redondeadas homogéneas</text></svg>`,
+        atlasCaption: "<strong>Eccema Numular:</strong> Placas circulares en miembros inferiores asociadas a xerosis.",
+        subtipos: ["Fase Aguda (exudativa, microvesículas)", "Fase Crónica (seca, engrosada, liquenificada)."],
+        fisiopatologia: "Dermatitis por xerosis intensa y disfunción de barrera en extremidades, colonizada frecuentemente por <em>S. aureus</em>.",
+        clinica: ["Placas circulares en moneda de 1-5 cm en piernas y brazos. Prurito intenso."],
+        diagnostico: ["Clínico. KOH al 10-20% negativo para descartar tiña."],
+        tratamiento: {
+          general: ["Hidratación intensiva con Novobase II o urea 10%.", "Baños cortos tibios con syndet."],
+          primera: [
+            "Clobetasol 0.05% crema c/12 h por 7 días, luego c/24 h por 7 días.",
+            "Clorfenamina 4 mg c/12 h VO.",
+            "Sobreinfección purulenta: Cefadroxilo 500 mg c/12 h VO por 7-10 días."
+          ],
+          segunda: ["Prednisona oral matinal en pauta descendente (40 -> 20 -> 10 mg cada 3 días) en casos extensos."],
+          derivacion: ["Refractariedad a corticoides potentes tras 3-4 semanas."]
+        },
+        differentials: [
+          { id: "tinea_corporis", pearl: "La tiña tiene borde activo con aclaramiento central y KOH positivo; el eccema numular es homogéneo sin centro sano y KOH negativo." },
+          { id: "dermatitis_atopica", pearl: "La DA típica toma pliegues flexurales; el numular forma monedas discretas independientes en piernas o tronco." },
+          { id: "psoriasis", pearl: "Psoriasis presenta escamas blanco-nacaradas gruesas y Auspitz (+); el numular es eccematoso y pruriginoso." }
+        ]
+      },
+      {
+        id: "dishidrosis",
+        name: "Dishidrosis (Eccema Dishidrótico)",
+        category: "eczemas",
+        categoryLabel: "Eczemas & Dermatitis",
+        color: "#ec4899",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Vesículas profundas transparentes en 'grano de mijo' en caras laterales de dedos de manos y palmas/plantas con prurito urente súbito y descamación en collarete posterior.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Dyshidrotic_eczema.jpg/800px-Dyshidrotic_eczema.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><path d="M50,110 L50,40 Q60,30 70,40 L70,80 Q80,20 90,20 Q100,20 100,80 Q110,15 120,15 Q130,15 130,80 L140,80 L140,110 Z" fill="#334155" opacity="0.5"/><circle cx="60" cy="55" r="3" fill="#38bdf8"/><circle cx="68" cy="65" r="2.5" fill="#38bdf8"/><circle cx="82" cy="45" r="3" fill="#38bdf8"/><circle cx="98" cy="50" r="2.5" fill="#38bdf8"/><text x="120" y="128" fill="#93c5fd" font-size="9" text-anchor="middle">Vesículas profundas en caras laterales de dedos ('granos de mijo')</text></svg>`,
+        atlasCaption: "<strong>Dishidrosis Palmoplantar:</strong> Microvesículas translúcidas en bordes laterales de los dedos.",
+        subtipos: ["Forma Aguda Vesicular", "Forma Crónica Descamativa / Pomfólix (grandes ampollas)."],
+        fisiopatologia: "Patrón de reacción eccematosa vesicular palmoplantar idiopático o asociado a diátesis atópica, estrés emocional, contacto con metales (níquel/cobalto) o reacción 'ide' a tiña pedis a distancia.",
+        clinica: ["Brotes agudos recurrentes de vesículas tensas intraepidérmicas en caras laterales de dedos, palmas y plantas.", "Prurito y sensación de calor intenso.", "Evolucionan a descamación y fisuras dolorosas."],
+        diagnostico: ["Clínico. KOH de pies para descartar reacción 'ide' secundaria a tiña pedis."],
+        tratamiento: {
+          general: ["Compresas frías con agua de manzanilla o suero fisiológico.", "Emolientes densos tras fase vesicular."],
+          primera: ["Clobetasol 0.05% crema o Betametasona dipropionato 0.05% c/12 h por 10-14 días con descenso progresivo."],
+          segunda: ["Prednisona oral 0.5 mg/kg/día por 5-7 días en pomfólix ampollar severo."],
+          derivacion: ["Fracaso tras 4 semanas o episodios continuos invalidantes."]
+        },
+        differentials: [
+          { id: "dc_alergica", pearl: "Aparece tras contactante conocido y no suele limitarse exclusivamente a vesículas en grano de mijo laterales de dedos." },
+          { id: "tinea_corporis", pearl: "Tiña manuum es unilateral con descamación y borde activo (KOH +); la dishidrosis suele ser bilateral y simétrica." },
+          { id: "escabiosis", pearl: "Presenta surcos acarinos interdigitales, vesícula perlada en extremo del surco y prurito nocturno familiar." }
+        ]
+      },
+      {
+        id: "dermatitis_perioral",
+        name: "Dermatitis Perioral",
+        category: "anexos",
+        categoryLabel: "Acné, Rosácea & Folículo",
+        color: "#a855f7",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo / Derivar", level: "aps" },
+        patognomonico: "Micropápulas y microvesículas foliculares agrupadas en región peribucal RESPETANDO UN ESTRECHO HALO CUTÁNEO LIBRE ALREDEDOR DE LOS LABIOS; historia típica de uso previo de corticoides tópicos potentes.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Perioral_dermatitis.jpg/800px-Perioral_dermatitis.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><ellipse cx="120" cy="70" rx="40" ry="25" fill="#f43f5e" fill-opacity="0.3"/><ellipse cx="120" cy="70" rx="22" ry="10" fill="#1e1b4b" stroke="#38bdf8" stroke-width="1.5"/><ellipse cx="120" cy="70" rx="16" ry="6" fill="#dc2626"/><text x="120" y="125" fill="#e9d5ff" font-size="9" text-anchor="middle">Micropápulas peribucales con halo libre perioral respetado</text></svg>`,
+        atlasCaption: "<strong>Dermatitis Perioral:</strong> Micropápulas eritematosas con preservación del borde peribucal.",
+        subtipos: ["Forma Clásica Folicular", "Forma Granulomatosa infantil."],
+        fisiopatologia: "Disfunción de la barrera epidérmica y colonización folicular facilitada por la aplicación indebida de corticoides tópicos fluorados o cosméticos oclusivos.",
+        clinica: ["Pápulas y pústulas eritematosas milimétricas alrededor de la boca.", "<strong>Signo cardinal:</strong> Respeta estrictamente un borde de 2-3 mm inmediatamente adyacente al labio bermellón."],
+        diagnostico: ["Clínico + antecedente de uso de corticoides."],
+        tratamiento: {
+          general: ["<strong>SUSPENDER DE INMEDIATO TODO CORTICOIDE TÓPICO</strong> (advertir rebote temporal de 1-2 semanas).", "Cesar cremas pesadas."],
+          primera: ["Metronidazol 0.75% gel c/12 h o Pimecrolimus 1% crema c/12 h por 6-8 semanas.", "Doxiciclina 100 mg/día VO o Limesiciclina 300 mg/día VO por 4-6 semanas."],
+          segunda: ["Eritromicina 250 mg c/6-8 h VO en niños o embarazadas."],
+          derivacion: ["Rebote severo corticoideo incontrolable."]
+        },
+        differentials: [
+          { id: "rosacea", pearl: "Rosácea compromete mejillas, nariz y frente con flushing; la perioral se limita al área peribucal con halo libre perioral." },
+          { id: "acne", pearl: "Acné tiene comedones abiertos (puntos negros); la dermatitis perioral nunca tiene comedones." },
+          { id: "dc_alergica", pearl: "Reacción a pasta dental o labial toma activamente el borde bermellón sin respetar el halo perioral." }
+        ]
+      },
+      {
+        id: "dermatitis_estasis",
+        name: "Dermatitis de Estasis Venosa",
+        category: "eczemas",
+        categoryLabel: "Eczemas & Vasculares",
+        color: "#ec4899",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo / Derivar", level: "aps" },
+        patognomonico: "Insuficiencia venosa crónica bilateral en tercio inferior de piernas con pigmentación ocre hemosiderínica, lipodermatoesclerosis y eccema descamativo; pulsos presentes y sin fiebre.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Stasis_dermatitis.jpg/800px-Stasis_dermatitis.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><circle cx="105" cy="50" r="14" fill="#b45309" fill-opacity="0.6"/><circle cx="135" cy="70" r="16" fill="#b45309" fill-opacity="0.6"/><ellipse cx="140" cy="100" rx="12" ry="7" fill="#dc2626" stroke="#f87171" stroke-width="1.5"/><text x="120" y="130" fill="#fcd34d" font-size="9" text-anchor="middle">Pigmentación ocre + Lipodermatoesclerosis pretibial</text></svg>`,
+        atlasCaption: "<strong>Dermatitis de Estasis:</strong> Manchas ocres hemosiderínicas y várices asociadas.",
+        subtipos: ["Fase Aguda Eccematosa", "Fase Crónica Indurada (lipodermatoesclerosis)", "Úlcera Venosa Supramaleolar."],
+        fisiopatologia: "Hipertensión venosa retrógrada con extravasación de hematíes a la dermis y depósito crónico de hemosiderina.",
+        clinica: ["Bilateral en 1/3 distal pretibial.", "Máculas café-ferrosas (ocres hemosiderínicas).", "Pulsos distales presentes; sin fiebre."],
+        diagnostico: ["Clínico + Eco-Doppler venoso. Medición de ITB (>0.8 antes de comprimir)."],
+        tratamiento: {
+          general: ["Reposo con piernas elevadas 15-30 cm por sobre el corazón.", "Medias de compresión elástica graduada (20-30 mmHg).", "Emolientes."],
+          primera: ["Mometasona 0.1% o Betametasona valerato 0.1% c/12-24 h por 7-14 días en brotes eccematosos."],
+          segunda: ["Curaciones avanzadas con apósitos hidrocoloides y Bota de Unna en úlcera."],
+          derivacion: ["Úlcera refractaria >6-8 semanas."]
+        },
+        differentials: [
+          { id: "celulitis_erisipela", pearl: "Celulitis es aguda, unilateral, caliente, con dolor agudo exquisito, fiebre alta y leucocitosis; la estasis es bilateral y afebril." },
+          { id: "eccema_numular", pearl: "Monedas redondeadas discretas independientes sin várices ni depósitos hemosiderínicos ocres difusos." }
+        ]
+      },
+      {
+        id: "intertrigo_candidiasico",
+        name: "Intértrigo Candidiásico",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Placa rojo vivo en fondo del pliegue macerado con fisura dolorosa en espejo y PÚSTULAS/PÁPULAS SATÉLITES periféricas; empeora francamente con betametasona.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Candida_intertrigo_axilla.jpg/800px-Candida_intertrigo_axilla.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><path d="M40,30 Q120,80 200,30" fill="none" stroke="#f59e0b" stroke-width="4"/><circle cx="80" cy="100" r="4" fill="#fbbf24" stroke="#d97706"/><circle cx="110" cy="115" r="4.5" fill="#fbbf24" stroke="#d97706"/><text x="120" y="65" fill="#fef08a" font-size="9" text-anchor="middle">Fisura en fondo de pliegue</text><text x="120" y="132" fill="#cbd5e1" font-size="9" text-anchor="middle">Pústulas y pápulas satélites periféricas</text></svg>`,
+        atlasCaption: "<strong>Intértrigo Candidiásico:</strong> Fisura dolorosa en fondo de pliegue con satelitosis.",
+        subtipos: ["Submamario", "Inguinal/Crural", "Erosión interdigital blastomicética."],
+        fisiopatologia: "Sobrecrecimiento de <em>Candida albicans</em> favorecido por humedad, calor y maceración piel con piel en pacientes con diabetes u obesidad.",
+        clinica: ["Eritema rojo brillante en ambas caras del pliegue.", "Fisura macerada en el fondo.", "<strong>Pápulas y pústulas satélites periféricas</strong>."],
+        diagnostico: ["Clínico + KOH (blastosporas y pseudohifas). Solicitar glicemia/HbA1c."],
+        tratamiento: {
+          general: ["SUSPENDER corticoides tópicos potentes.", "Mantener pliegues secos y ventilados."],
+          primera: [
+            "Fondo macerado/fisura: Pasta Cutanil o Pasta Lassar con Clotrimazol c/12 h (óxido de zinc secante).",
+            "Placa eritematosa periférica: Clotrimazol 1% crema o Miconazol 2% c/12 h por 3-4 semanas."
+          ],
+          segunda: ["Fluconazol 150 mg VO semanal por 2 semanas en casos extensos o diabéticos descompensados."],
+          derivacion: ["Resistencia tras 4 semanas de tratamiento."]
+        },
+        differentials: [
+          { id: "tinea_corporis", pearl: "Tiña cruris tiene borde activo elevado con centro curado y respeta el fondo; el intértrigo toma activamente el fondo con fisuras y pústulas satélites." },
+          { id: "dermatitis_panal", pearl: "DPI irritativa respeta el fondo; al sobreinfectarse por cándida invade el pliegue con satelitosis." },
+          { id: "psoriasis", pearl: "Psoriasis invertida no tiene maceración húmeda con fisura ni pústulas satélites periféricas." }
+        ]
+      },
+      {
+        id: "onicomicosis",
+        name: "Onicomicosis (Tiña Ungueal & Candidiasis)",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Tríada ungueal de hiperqueratosis subungueal, xantoniquia (cambio de color amarillo/marrón) y onicólisis asimétrica en pies; requiere confirmación micológica antes de iniciar fármacos orales.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Onychomycosis.jpg/800px-Onychomycosis.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><path d="M80,30 C80,20 160,20 160,30 L160,95 C160,110 80,110 80,95 Z" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/><path d="M80,75 C100,65 140,65 160,75 L160,95 C160,110 80,110 80,95 Z" fill="#eab308" fill-opacity="0.8"/><text x="120" y="125" fill="#fef08a" font-size="9" text-anchor="middle">Xantoniquia + Hiperqueratosis distal</text></svg>`,
+        atlasCaption: "<strong>Onicomicosis Distolateral:</strong> Engrosamiento subungueal hiperqueratósico y xantoniquia.",
+        subtipos: ["Subungueal Distolateral (80-90%, T. rubrum en pies)", "Candidiasis Ungueal / Paroniquia (manos, perionixis dolorosa)."],
+        fisiopatologia: "Invasión de la lámina y lecho ungueal por hongos dermatofitos (<em>Trichophyton rubrum</em>) o levaduras (<em>Candida</em>).",
+        clinica: ["Hiperqueratosis subungueal + Xantoniquia + Onicólisis quebradiza.", "Asimétrica (una o pocas uñas de pies)."],
+        diagnostico: ["<strong>OBLIGATORIO antes de vía oral:</strong> Examen directo (KOH) + Cultivo micológico de raspado."],
+        tratamiento: {
+          general: ["Tratar tiña pedis concomitante. Si hay sobreinfección bacteriana, evitar derivados de penicilina y usar eritromicina."],
+          primera: [
+            "Dermatofitos (pies): Terbinafina 250 mg/día VO por 12 semanas (pies) o 6 semanas (manos). Perfil hepático basal.",
+            "Candida / Paroniquia: Fluconazol 150-200 mg VO semanales por 6 meses."
+          ],
+          segunda: ["Lacas tópicas (Amorolfina 5% semanal) solo si hay contraindicación formal oral."],
+          derivacion: ["Hepatopatía o compromiso total de matriz ungueal refractario."]
+        },
+        differentials: [
+          { id: "psoriasis", pearl: "Psoriasis ungueal es simétrica bilateral en múltiples uñas con hoyuelos en dedal (pitting) y cultivo negativo." },
+          { id: "liquen_plano", pearl: "Liquen plano ungueal produce atrofia, adelgazamiento y pterigión dorsal sin detritus hiperqueratósicos." }
+        ]
+      },
+      {
+        id: "tinea_corporis",
+        name: "Dermatofitosis (Tiñas: Corporis, Cruris, Pedis)",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Placas anulares eritematosas con BORDE ACTIVO SOBREELEVADO vesículo-escamoso de avance centrífugo y centro curado; confirmación con KOH positivo (hifas hialinas tabicadas).",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Tinea_corporis.jpg/800px-Tinea_corporis.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><circle cx="120" cy="70" r="42" fill="#fef08a" fill-opacity="0.1" stroke="#f59e0b" stroke-width="4"/><circle cx="120" cy="70" r="30" fill="#1e1b4b"/><text x="120" y="73" fill="#86efac" font-size="9" text-anchor="middle">Centro sano aclarado</text><text x="120" y="125" fill="#fde047" font-size="9" text-anchor="middle">Borde activo microvesiculoso eritematoso</text></svg>`,
+        atlasCaption: "<strong>Tinea Corporis:</strong> Placa anular con aclaramiento central y avance activo periférico.",
+        subtipos: ["Tinea Corporis", "Tinea Cruris (respeta escroto)", "Tinea Pedis (pie de atleta)", "Querión de Celso (inflamatoria capitis)."],
+        fisiopatologia: "Infección de tejidos queratinizados por dermatofitos (<em>Trichophyton</em>, <em>Microsporum</em>, <em>Epidermophyton</em>).",
+        clinica: ["Placas anulares con borde activo descamativo y centro curado."],
+        diagnostico: ["Clínico + KOH 10-20% positivo con hifas tabicadas."],
+        tratamiento: {
+          general: ["PROHIBIDO cremas combinadas con betametasona (evita Tinea Incógnita)."],
+          primera: ["Terbinafina 1% crema c/12-24 h por 2 a 3 semanas.", "Clotrimazol 1% crema c/12 h por 4 semanas."],
+          segunda: ["Terbinafina oral 250 mg/día VO por 2-4 semanas en lesiones extensas o tiña capitis."],
+          derivacion: ["Querión de Celso abscedado."]
+        },
+        differentials: [
+          { id: "pitiriasis_rosada", pearl: "Placa heráldica tiene collarete escamativo interno hacia adentro; la tiña tiene borde activo hacia afuera y KOH positivo." },
+          { id: "eccema_numular", pearl: "Placas en moneda completas y homogéneas sin centro curado sano y con KOH negativo." },
+          { id: "psoriasis", pearl: "Psoriasis tiene escamas plateadas gruesas de cera y no tiene verdadero centro curado." }
+        ]
+      },
+      {
+        id: "pitiriasis_versicolor",
+        name: "Pitiriasis Versicolor",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Máculas confluentes hipo o hiperpigmentadas en tronco con descamación fina furfurácea al raspado (Signo de la uñada de Besnier positivo); KOH con imagen de espaguetis con albóndigas.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Tinea_versicolor_on_chest.jpg/800px-Tinea_versicolor_on_chest.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><ellipse cx="80" cy="65" rx="30" ry="22" fill="#fef08a" fill-opacity="0.35" stroke="#fde047" stroke-width="1.5"/><ellipse cx="150" cy="75" rx="35" ry="26" fill="#fef08a" fill-opacity="0.35" stroke="#fde047" stroke-width="1.5"/><text x="120" y="125" fill="#fef08a" font-size="9" text-anchor="middle">Máculas confluentes + Signo de la uñada (Besnier)</text></svg>`,
+        atlasCaption: "<strong>Pitiriasis Versicolor:</strong> Máculas confluentes hipocrómicas finamente descamativas en tronco.",
+        subtipos: ["Máculas hipopigmentadas en piel bronceada", "Máculas hiperpigmentadas/eritematosas en tronco."],
+        fisiopatologia: "Proliferación micelial superficial de <em>Malassezia</em> favorecida por calor, sudor y sebo.",
+        clinica: ["Máculas ovales en tronco que desprenden escama fina harinosa al raspado (signo de la uñada)."],
+        diagnostico: ["Clínico + KOH con patrón de 'espaguetis con albóndigas'."],
+        tratamiento: {
+          general: ["Explicar que la hipopigmentación tarda semanas en repigmentarse tras la curación."],
+          primera: ["Champú Ketoconazol 2% diario dejando actuar 10 min por 14 días + Terbinafina 1% crema c/12 h."],
+          segunda: ["Itraconazol 200 mg/día VO por 7 días o Fluconazol 300 mg semanal por 2 semanas."],
+          derivacion: ["Recidivas continuas."]
+        },
+        differentials: [
+          { id: "vitiligo", pearl: "Vitíligo causa máculas acrómicas blanco tiza completas sin escama de uñada y con luz de Wood blanco brillante." },
+          { id: "sifilis_secundaria", pearl: "Collar de Venus sifilítico se acompaña de pápulas palmoplantares y VDRL reactivo a títulos altos." }
+        ]
+      },
+      {
+        id: "dermatitis_seborreica",
+        name: "Dermatitis Seborreica",
+        category: "eritematosas",
+        categoryLabel: "Eritematoescamosas",
+        color: "#10b981",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Eritema con escamas untuosas grasosas amarillentas en cuero cabelludo (costra láctea / caspa), cejas, surcos nasogenianos y región esternal; no invasiva.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Seborrhoeic_dermatitis_face.jpg/800px-Seborrhoeic_dermatitis_face.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><path d="M70,40 Q120,20 170,40 Q120,70 70,40" fill="#10b981" fill-opacity="0.3" stroke="#10b981" stroke-width="2"/><ellipse cx="120" cy="85" rx="15" ry="25" fill="#10b981" fill-opacity="0.3" stroke="#10b981" stroke-width="2"/><text x="120" y="125" fill="#a7f3d0" font-size="9" text-anchor="middle">Escama grasosa untuosa amarillenta centrofacial</text></svg>`,
+        atlasCaption: "<strong>Dermatitis Seborreica:</strong> Eritema y escamas untuosas amarillentas en surco nasogeniano.",
+        subtipos: ["Forma Infantil (costra láctea)", "Forma Adulto (caspa, eritema centrofacial)."],
+        fisiopatologia: "Respuesta inflamatoria a la proliferación de <em>Malassezia</em> en zonas de alta densidad de glándulas sebáceas.",
+        clinica: ["Escamas untuosas amarillentas en surcos nasogenianos, cuero cabelludo y cejas."],
+        diagnostico: ["Clínico. En adultos jóvenes con brote explosivo: solicitar VIH."],
+        tratamiento: {
+          general: ["Explicar cronicidad y empeoramiento con estrés."],
+          primera: [
+            "Cuero cabelludo: Champú Ketoconazol 2% o Sulfuro de Selenio 2.5% 2-3 veces/semana.",
+            "Cara: Ketoconazol 2% crema c/12 h x 2-4 semanas. Hidrocortisona 1% crema solo primeros 3 días si hay eritema intenso."
+          ],
+          segunda: ["Pimecrolimus 1% crema."],
+          derivacion: ["Eritrodermia de Leiner en lactantes."]
+        },
+        differentials: [
+          { id: "psoriasis", pearl: "Psoriasis presenta escamas blanco-nacaradas secas gruesas, sobrepasa la línea del pelo y tiene Auspitz (+)." },
+          { id: "rosacea", pearl: "Rosácea da telangiectasias y pústulas sin escama oleosa y con flushing ante calor o alcohol." },
+          { id: "dermatitis_atopica", pearl: "DA tiene prurito severo y no suele dar escamas amarillentas oleosas en surcos nasogenianos." }
+        ]
+      },
+      {
+        id: "psoriasis",
+        name: "Psoriasis Vulgar y Guttata",
+        category: "eritematosas",
+        categoryLabel: "Eritematoescamosas",
+        color: "#10b981",
+        eunacom: { diag: "Específico", tto: "Inicial", seg: "Derivar / Completo", level: "derivar" },
+        patognomonico: "Placas eritematosas bien delimitadas cubiertas de escamas blanco-nacaradas gruesas plateadas en superficies extensoras (codos/rodillas); raspado con signo de rocío sangrante de Auspitz.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Psoriasis_on_elbow.jpg/800px-Psoriasis_on_elbow.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><ellipse cx="120" cy="65" rx="55" ry="32" fill="#ef4444" fill-opacity="0.4" stroke="#ef4444" stroke-width="2"/><ellipse cx="120" cy="65" rx="42" ry="22" fill="#f8fafc" fill-opacity="0.85" stroke="#cbd5e1" stroke-width="2"/><text x="120" y="125" fill="#a7f3d0" font-size="9" text-anchor="middle">Escama plateada gruesa + Rocío de Auspitz</text></svg>`,
+        atlasCaption: "<strong>Psoriasis en Codo:</strong> Placa eritematosa con escamas nacaradas en cara extensora.",
+        subtipos: ["Psoriasis en Placas (codos, rodillas)", "Psoriasis Guttata (en gotas postestreptocócica)", "Psoriasis Invertida (en pliegues)", "Psoriasis Pustulosa de von Zumbusch (Urgencia Vital por corticoides orales)."],
+        fisiopatologia: "Enfermedad autoinmune sistémica mediada por eje IL-23/Th17 con recambio de queratinocitos acelerado a 4 días. Fenómeno de Koebner.",
+        clinica: ["Placas con escamas plateadas gruesas en caras extensoras. Raspado de Brocq y rocío sangrante de Auspitz (+). Pitting ungueal."],
+        diagnostico: ["Clínico directo. En guttata: test estreptocócico faríngeo."],
+        tratamiento: {
+          general: ["CONTRAINDICADOS los corticoides orales o sistémicos (riesgo de rebote pustuloso mortal).", "Urea 10-20%."],
+          primera: ["Clobetasol 0.05% pomada alternado con Calcipotriol 0.005% c/12-24 h por 4 semanas."],
+          segunda: ["Metotrexato oral semanal (+ ácido fólico), fototerapia o biológicos."],
+          derivacion: ["Compromiso >10% superficie corporal, sospecha de artritis psoriásica o eritrodermia."]
+        },
+        differentials: [
+          { id: "pitiriasis_rosada", pearl: "Medallón heráldico y lesiones en árbol de navidad en tronco con collarete interno; autorresolutiva en 6-8 semanas." },
+          { id: "eccema_numular", pearl: "Monedas eritematovesiculosas exudativas pruriginosas en piernas sin escama plateada de Auspitz." },
+          { id: "liquen_plano", pearl: "Pápulas poligonales violáceas pruriginosas en caras flexoras de muñecas con estrías de Wickham." }
+        ]
+      },
+      {
+        id: "pitiriasis_rosada",
+        name: "Pitiriasis Rosada de Gibert",
+        category: "eritematosas",
+        categoryLabel: "Eritematoescamosas",
+        color: "#10b981",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Medallón heráldico ovalado precursor en tronco seguido de brote secundario de lesiones ovales siguiendo líneas de tensión en 'árbol de navidad' con collarete descamativo interno.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Pityriasis_rosea_herald_patch.jpg/800px-Pityriasis_rosea_herald_patch.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><ellipse cx="70" cy="65" rx="35" ry="22" fill="#f43f5e" fill-opacity="0.3" stroke="#f43f5e" stroke-width="2"/><ellipse cx="160" cy="40" rx="16" ry="9" transform="rotate(-25 160 40)" fill="#f43f5e" fill-opacity="0.3" stroke="#f43f5e"/><text x="120" y="125" fill="#a7f3d0" font-size="9" text-anchor="middle">Placa heráldica + Patrón en árbol de navidad</text></svg>`,
+        atlasCaption: "<strong>Medallón Heráldico:</strong> Placa ovalada precursora eritematosa con collarete descamativo interno.",
+        subtipos: ["Fase de Medallón Heráldico", "Fase Eruptiva Secundaria en Árbol de Navidad."],
+        fisiopatologia: "Exantema reactivo autolimitado por reactivación de herpesvirus humanos 6 y 7 (HHV-6/7).",
+        clinica: ["Placa heráldica inicial seguida de brote en líneas de tensión en tronco con collarete interno. Respeta palmas y plantas."],
+        diagnostico: ["Clínico. Si hay lesiones palmoplantares: solicitar VDRL/RPR para descartar sífilis."],
+        tratamiento: {
+          general: ["Educación y tranquilidad: proceso benigno que sana solo en 4 a 8 semanas."],
+          primera: ["Sintomático: Emolientes y Cetirizina 10 mg/día VO solo si hay prurito.", "Hidrocortisona 1% crema en placas inflamatorias."],
+          segunda: ["Exposición solar matinal suave."],
+          derivacion: ["Duración >12 semanas o VDRL reactivo."]
+        },
+        differentials: [
+          { id: "sifilis_secundaria", pearl: "Roséola sifilítica sí afecta palmas y plantas, carece de medallón precursor y tiene VDRL reactivo." },
+          { id: "psoriasis", pearl: "Psoriasis guttata tiene escamas gruesas plateadas sin collarete interno y ASLO elevado." },
+          { id: "tinea_corporis", pearl: "La tiña tiene avance centrífugo con borde activo hacia afuera y KOH positivo." }
+        ]
+      },
+      {
+        id: "liquen_plano",
+        name: "Liquen Plano",
+        category: "eritematosas",
+        categoryLabel: "Eritematoescamosas",
+        color: "#10b981",
+        eunacom: { diag: "Sospecha / Específico", tto: "Inicial", seg: "Derivar", level: "derivar" },
+        patognomonico: "Regla de las 4P: Pápulas Poligonales Purpúricas Pruriginosas cruzadas por estrías de Wickham en caras flexoras de muñecas y tobillos; asociación a Virus Hepatitis C.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Lichen_planus_wrist.jpg/800px-Lichen_planus_wrist.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><polygon points="120,35 155,65 140,105 100,105 85,65" fill="#7c3aed" fill-opacity="0.6" stroke="#a855f7" stroke-width="2"/><path d="M100,55 L140,85 M105,85 L135,55" stroke="#ffffff" stroke-width="1.5"/><text x="120" y="125" fill="#d8b4fe" font-size="9" text-anchor="middle">Pápula poligonal violácea + Estrías de Wickham</text></svg>`,
+        atlasCaption: "<strong>Liquen Plano en Muñeca:</strong> Pápulas violáceas poligonales brillantes en cara anterior flexora.",
+        subtipos: ["Cutáneo Clásico", "Oral Erosivo / Reticulado", "Liquen Plano Pilaris (alopecia cicatrizal)."],
+        fisiopatologia: "Dermatitis de interfase mediada por linfocitos T CD8+ citotóxicos contra queratinocitos basales. Asociación a Hepatitis C.",
+        clinica: ["Pápulas violáceas poligonales en flexuras (muñecas/tobillos) con estrías de Wickham.", "Reticulado blanquecino en mucosa yugal."],
+        diagnostico: ["Clínico + Biopsia. Solicitar serología Hepatitis C (VHC) y VHB."],
+        tratamiento: {
+          general: ["Inspección de mucosa bucal y genital."],
+          primera: ["Clobetasol 0.05% ungüento c/12 h por 2-4 semanas.", "Hidroxicina 25 mg noche para frenar el rascado."],
+          segunda: ["Triamcinolona 0.1% en orabase para aftas orales.", "Prednisona oral 0.5 mg/kg/día por 2 semanas en brotes severos."],
+          derivacion: ["Confirmación histológica y descarte de transformación maligna en formas orales erosivas."]
+        },
+        differentials: [
+          { id: "psoriasis", pearl: "Psoriasis afecta superficies extensoras (codos/rodillas), tiene escamas plateadas y no es de color violáceo ni poligonal." },
+          { id: "sifilis_secundaria", pearl: "Pápulas cobrizas no poligonales sin estrías de Wickham con compromiso sistémico." },
+          { id: "dc_alergica", pearl: "Eccematosa, con vesículas exudativas sin morfología poligonal violácea." }
+        ]
+      },
+      {
+        id: "acne",
+        name: "Acné Vulgar",
+        category: "anexos",
+        categoryLabel: "Acné, Rosácea & Folículo",
+        color: "#a855f7",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Presencia patognomónica de COMEDONES (abiertos o cerrados) asociados a pápulas inflamatorias, pústulas o quistes en rostro, pecho y espalda.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Acne_vulgaris_face.jpg/800px-Acne_vulgaris_face.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><circle cx="80" cy="70" r="14" fill="#ef4444" stroke="#dc2626" stroke-width="2"/><circle cx="80" cy="70" r="4" fill="#0f172a"/><circle cx="140" cy="65" r="18" fill="#ef4444" fill-opacity="0.6"/><circle cx="140" cy="65" r="7" fill="#fef08a" stroke="#d97706"/><text x="120" y="125" fill="#e9d5ff" font-size="9" text-anchor="middle">Comedón (punto negro) + Pápulo-pústula folicular</text></svg>`,
+        atlasCaption: "<strong>Acné Polimorfo:</strong> Comedones, pápulas y pústulas inflamatorias en mejilla.",
+        subtipos: ["Comedoniano (Grado I)", "Pápulo-Pustuloso (Grado II-III)", "Nódulo-Quístico / Conglobata (Grado IV)."],
+        fisiopatologia: "Hiperqueratinización folicular + hipersecreción sebácea androgénica + sobrecrecimiento de <em>Cutibacterium acnes</em> + inflamación.",
+        clinica: ["Comedones abiertos/cerrados indispensables para el diagnóstico.", "Pápulas, pústulas y nódulos en cara, escote y espalda."],
+        diagnostico: ["Clínico. En mujeres con hirsutismo o trastornos menstruales: evaluar SOP."],
+        tratamiento: {
+          general: ["Lavado con syndet ácido 2 veces/día, protectores oil-free."],
+          primera: [
+            "Comedoniano: Adapaleno 0.1% gel noche en capa fina.",
+            "Pápulo-pustuloso: Peróxido de Benzoilo 5% mañana + Adapaleno 0.1% noche.",
+            "Moderado con tronco: Doxiciclina 100 mg/día VO x 6-8 semanas asociado a tópicos."
+          ],
+          segunda: ["Anticonceptivos combinados antiandrogénicos en mujeres o Isotretinoína oral por especialista."],
+          derivacion: ["Acné nódulo-quístico severo, riesgo de cicatrices o fracaso tras 3 meses de antibióticos orales."]
+        },
+        differentials: [
+          { id: "rosacea", pearl: "Rosácea nunca tiene comedones; cursa con flushing, telangiectasias y pápulo-pústulas en mayores de 30 años." },
+          { id: "foliculitis_forunculo", pearl: "Pústulas foliculares monomorfas agudas en cuello o barba sin comedones abiertos ni cerrados." },
+          { id: "dermatitis_perioral", pearl: "Micropápulas agrupadas alrededor de la boca respetando un halo peribucal sano inducida por corticoides." }
+        ]
+      },
+      {
+        id: "rosacea",
+        name: "Rosácea",
+        category: "anexos",
+        categoryLabel: "Acné, Rosácea & Folículo",
+        color: "#a855f7",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo / Derivar", level: "aps" },
+        patognomonico: "Eritema centrofacial telangiectásico fijo con flushing episódico y pápulo-pústulas SIN COMEDONES en adultos >30 años; contraindicación absoluta de corticoides tópicos.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Rosacea_01.jpg/800px-Rosacea_01.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><ellipse cx="120" cy="70" rx="48" ry="32" fill="#ef4444" fill-opacity="0.35" stroke="#f43f5e"/><circle cx="110" cy="75" r="3" fill="#fef08a"/><circle cx="130" cy="72" r="3" fill="#fef08a"/><text x="120" y="125" fill="#e9d5ff" font-size="9" text-anchor="middle">Eritema centrofacial + Telangiectasias (SIN comedones)</text></svg>`,
+        atlasCaption: "<strong>Rosácea Papulopustulosa:</strong> Eritema centrofacial simétrico y pápulopústulas respetando contorno ocular.",
+        subtipos: ["Subtipo 1 (Eritematotelangiectásica)", "Subtipo 2 (Papulopustulosa)", "Subtipo 3 (Fimatosa / Rinofima)", "Subtipo 4 (Ocular / Blefaritis)."],
+        fisiopatologia: "Disfunción neurovascular e inmunidad innata hiperreactiva con aumento de catelicidinas (LL-37) y ácaro <em>Demodex</em>.",
+        clinica: ["Flushing episódico paroxístico ante calor, sol o alcohol. Eritema y pústulas centrofaciales <strong>sin comedones</strong>."],
+        diagnostico: ["Clínico directo. Signo clave: ausencia total de comedones."],
+        tratamiento: {
+          general: ["Fotoprotección FPS 50+ mineral.", "CONTRAINDICADOS los corticoides tópicos (empeoramiento catastrófico)."],
+          primera: [
+            "Leve/Moderada: Metronidazol 0.75% gel c/12 h o Ivermectina 1% crema noche por 8-12 semanas.",
+            "Moderada con pústulas: Doxiciclina 100 mg/día VO por 6 a 8 semanas."
+          ],
+          segunda: ["Isotretinoína a bajas dosis o láser vascular pulsado (PDL)."],
+          derivacion: ["Rosácea ocular con queratitis (urgencia), rinofima avanzado o falla a Doxiciclina."]
+        },
+        differentials: [
+          { id: "acne", pearl: "Acné tiene comedones e inicia en pubertad; rosácea no tiene comedones e inicia después de los 30 años." },
+          { id: "dermatitis_seborreica", pearl: "Tiene escama grasa amarillenta en surcos nasogenianos; rosácea no descama grasosa y tiene telangiectasias." },
+          { id: "lupus_discoide", pearl: "Lupus discoide genera tapones córneos en tachuela y atrofia cicatrizal; el eritema malar de LES respeta surcos nasogenianos." }
+        ]
+      },
+      {
+        id: "foliculitis_forunculo",
+        name: "Foliculitis, Forúnculo y Ántrax",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Pústula eritematosa superficial centrada estrictamente por un tallo piloso en foliculitis; nódulo inflamatorio profundo muy doloroso con necrosis central ('clavo') en forunculosis por S. aureus.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Folliculitis.jpg/800px-Folliculitis.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><ellipse cx="120" cy="80" rx="35" ry="25" fill="#dc2626" fill-opacity="0.4" stroke="#ef4444" stroke-width="2"/><circle cx="120" cy="70" r="7" fill="#fef08a" stroke="#d97706"/><line x1="120" y1="40" x2="120" y2="70" stroke="#0f172a" stroke-width="2"/><text x="120" y="125" fill="#fde047" font-size="9" text-anchor="middle">Pústula folicular con pelo central + 'Clavo' necrótico</text></svg>`,
+        atlasCaption: "<strong>Foliculitis Pustulosa:</strong> Múltiples pústulas eritematosas atravesadas por pelo central.",
+        subtipos: ["Foliculitis Superficial (impétigo de Bockhart)", "Forúnculo (necrosis folicular profunda)", "Ántrax (conglomerado de múltiples forúnculos con fístulas)."],
+        fisiopatologia: "Infección estafilocócica (<em>S. aureus</em>) del ostium y vaina del folículo piloso.",
+        clinica: ["Pústulas foliculares con pelo central en barba, cuello, glúteos o muslos. Forúnculo es un nódulo fluctuante exquisitamente doloroso."],
+        diagnostico: ["Clínico directo."],
+        tratamiento: {
+          general: ["Calor húmedo local para favorecer drenaje espontáneo.", "Aseo antiséptico con clorhexidina 2%."],
+          primera: [
+            "Foliculitis localizada: Mupirocina 2% ungüento o Ácido Fusídico 2% crema c/8 h por 7 días.",
+            "Forúnculo fluctuante: Drenaje quirúrgico con bisturí de la punta y expresión del clavo necrótico.",
+            "Forúnculos en cara (triángulo de la muerte) o múltiples: Cloxacilina 500 mg c/6 h VO o Cefadroxilo 500 mg c/12 h VO por 7-10 días."
+          ],
+          segunda: ["Cotrimoxazol forte en sospecha de SAMU comunitario."],
+          derivacion: ["Ántrax extenso en diabéticos o forunculosis facial con riesgo de trombosis del seno cavernoso."]
+        },
+        differentials: [
+          { id: "acne", pearl: "Acné tiene comedones abiertos (puntos negros) y cerrados; la foliculitis es monomorfa y centrada estrictamente por pelo sin comedones." },
+          { id: "molusco_contagioso", pearl: "Molusco es perlado cupuliforme con umbilicación central lisa; la foliculitis es eritematosa con pelo central." }
+        ]
+      },
+      {
+        id: "alopecia",
+        name: "Alopecias: Areata y Androgenética",
+        category: "anexos",
+        categoryLabel: "Acné, Rosácea & Folículo",
+        color: "#a855f7",
+        eunacom: { diag: "Sospecha / Específico", tto: "Inicial", seg: "Derivar", level: "derivar" },
+        patognomonico: "Alopecia areata: placas alopécicas redondeadas lisas no cicatrizales con pelos en 'signo de admiración'; Androgenética: miniaturización progresiva frontotemporal o en corona respetando orificios foliculares.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Alopecia_areata.jpg/800px-Alopecia_areata.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><circle cx="120" cy="70" r="32" fill="#334155" stroke="#a855f7" stroke-width="2"/><text x="120" y="73" fill="#ffffff" font-size="10" text-anchor="middle">Placa lisa</text><text x="120" y="125" fill="#e9d5ff" font-size="9" text-anchor="middle">Alopecia no cicatrizal (conserva poros)</text></svg>`,
+        atlasCaption: "<strong>Alopecia Areata:</strong> Placa redondeada circunscrita lisa con preservación de poros.",
+        subtipos: ["Alopecia Areata (autoinmune en placas)", "Alopecia Androgenética (miniaturización por DHT)", "Efluvio Telógeno (caída aguda difusa postestrés)."],
+        fisiopatologia: "Areata: colapso del privilegio inmune del bulbo por linfocitos T CD8+. Androgenética: acción de la dihidrotestosterona en folículos predispuestos.",
+        clinica: ["Areata: placas lisas circulares sin descamación. Androgenética: recesión bitemporal y vértex en hombres o raleamiento en corona en mujeres."],
+        diagnostico: ["Clínico y tricoscopía. Signo clave: preservación de orificios foliculares (no cicatrizal)."],
+        tratamiento: {
+          general: ["Manejo de expectativas y soporte."],
+          primera: [
+            "Areata localizada: Clobetasol 0.05% loción c/12 h por 4 semanas o infiltración intralesional con triamcinolona 5 mg/ml.",
+            "Androgenética: Minoxidil 5% loción/espuma 1 ml c/12 h y/o Finasteride 1 mg/día VO en hombres."
+          ],
+          segunda: ["Inhibidores de JAK (Baricitinib) o Minoxidil oral a bajas dosis."],
+          derivacion: ["Toda sospecha de alopecia cicatrizal (pérdida de poros, tapones en tachuela) o areata total."]
+        },
+        differentials: [
+          { id: "lupus_discoide", pearl: "Lupus discoide destruye los folículos de forma definitiva e irreversible con tapones córneos y atrofia cicatrizal." },
+          { id: "tinea_corporis", pearl: "Tiña capitis muestra placas con escamas, pelos rotos tiñosos y micológico directo con hifas positivo." },
+          { id: "sifilis_secundaria", pearl: "Alopecia apolillada irregular parcheada en claros de luna con VDRL reactivo a títulos altos." }
+        ]
+      },
+      {
+        id: "impetigo",
+        name: "Impétigo Vulgar y Ampollar",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Vesículas o ampollas flácidas que se rompen con extrema facilidad dejando COSTRAS MELICÉRICAS AMARILLENTAS (color miel) periorificiales (nariz y boca) en niños.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Impetigo_on_face.jpg/800px-Impetigo_on_face.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><circle cx="85" cy="65" r="14" fill="#eab308" stroke="#ca8a04" stroke-width="2"/><circle cx="120" cy="75" r="18" fill="#eab308" stroke="#ca8a04" stroke-width="2"/><circle cx="150" cy="60" r="12" fill="#eab308" stroke="#ca8a04" stroke-width="2"/><text x="120" y="125" fill="#fde047" font-size="9" text-anchor="middle">Costras melicéricas amarillentas periorificiales</text></svg>`,
+        atlasCaption: "<strong>Impétigo Contagioso:</strong> Costras melicéricas periorales amarillentas características.",
+        subtipos: ["Impétigo Costroso No Ampollar (70%, S. aureus / S. pyogenes)", "Impétigo Ampollar (30%, toxina exfoliativa de S. aureus)."],
+        fisiopatologia: "Infección epidérmica superficial muy contagiosa por <em>S. aureus</em> o <em>S. pyogenes</em> tras microtraumatismos o rascado.",
+        clinica: ["Costras melicéricas amarillentas alrededor de orificios nasales y boca. Estado general conservado y afebril."],
+        diagnostico: ["Clínico directo."],
+        tratamiento: {
+          general: ["Aseo suave con agua y jabón para ablandar costras.", "Aislamiento de toallas y corte de uñas."],
+          primera: [
+            "Localizado (<3 lesiones): Mupirocina 2% ungüento o Ácido Fusídico 2% crema c/8 h por 7-10 días.",
+            "Extenso (>3-5 lesiones): Cefadroxilo 500 mg c/12 h VO (niños: 30-50 mg/kg/día) por 7 días o Cloxacilina 500 mg c/6 h VO."
+          ],
+          segunda: ["Claritromicina o Azitromicina en alérgicos."],
+          derivacion: ["Síndrome de Piel Escaldada Estafilocócica (SSSS) en neonatos (Nikolsky +, desprendimiento masivo febril: Urgencia Hospitalaria)."]
+        },
+        differentials: [
+          { id: "herpes_simple_zoster", pearl: "Herpes da vesículas arracimadas con ardor prodrómico previo; no da costras melicéricas amarillentas extensas en niños." },
+          { id: "dermatitis_atopica", pearl: "DA puede impetiginizarse secundariamente, pero tiene antecedentes de atopia, xerosis difusa y prurito crónico." },
+          { id: "eccema_numular", pearl: "Placas en moneda redondeadas con microvesículas que pueden impetiginizarse de forma secundaria." }
+        ]
+      },
+      {
+        id: "celulitis_erisipela",
+        name: "Erisipela y Celulitis Infecciosa",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo / Derivar", level: "aps" },
+        patognomonico: "Erisipela: placa eritematosa roja brillante caliente con borde sobreelevado en escalón bien definido y fiebre alta brusca; Celulitis: bordes mal delimitados difusos con edema y calor profundo.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Erysipelas_leg.jpg/800px-Erysipelas_leg.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><path d="M60,30 Q120,40 180,30 L180,105 Q120,115 60,105 Z" fill="#ef4444" fill-opacity="0.4" stroke="#dc2626" stroke-width="3"/><text x="120" y="65" fill="#ffffff" font-size="10" text-anchor="middle" font-weight="bold">Borde neto en escalón + Calor + Rubor</text><text x="120" y="125" fill="#fca5a5" font-size="9" text-anchor="middle">Unilateral + Fiebre alta de inicio brusco</text></svg>`,
+        atlasCaption: "<strong>Erisipela Pretibial:</strong> Placa roja brillante bien delimitada en escalón unilateral.",
+        subtipos: ["Erisipela (superficial, linfático, bordes netos, S. pyogenes)", "Celulitis (profundo, subcutáneo, bordes difusos, S. aureus/Strep)", "Fascitis Necrotizante (Urgencia Quirúrgica)."],
+        fisiopatologia: "Infección bacteriana dérmica profunda tras puerta de entrada (tiña pedis interdigital, fisuras o úlceras).",
+        clinica: ["Erisipela: borde neto en escalón + fiebre alta. Celulitis: tumefacción difusa con bordes mal definidos. Unilateral."],
+        diagnostico: ["Clínico. Marcar bordes con lápiz indeleble para control en 24-48 h."],
+        tratamiento: {
+          general: ["Reposo absoluto con pierna elevada por sobre nivel de cadera.", "Tratar tiña pedis interdigital de entrada."],
+          primera: [
+            "Erisipela ambulatoria: Penicilina V 500 mg c/6-8 h VO por 10 días o Cefadroxilo 500 mg c/12 h VO.",
+            "Celulitis ambulatoria: Cefadroxilo 500 mg c/12 h VO o Cloxacilina 500 mg c/6 h VO por 10 días."
+          ],
+          segunda: ["Clindamicina 300 mg c/8 h VO en alérgicos o Cefazolina 1 g c/8 h EV hospitalizado."],
+          derivacion: ["Sospecha de fascitis necrotizante (dolor desproporcionado, anestesia cutánea, flictenas hemorrágicas): CIRUGÍA DE URGENCIA INMEDIATA."]
+        },
+        differentials: [
+          { id: "dermatitis_estasis", pearl: "Dermatitis de estasis es bilateral, crónica, en polainas con manchas ocres hemosiderínicas y sin fiebre; celulitis es aguda, unilateral y caliente." },
+          { id: "eritema_nodoso", pearl: "Eritema nodoso es bilateral, pretibial en nódulos múltiples muy dolorosos que nunca se ulceran; celulitis es difusa y casi siempre unilateral." },
+          { id: "dc_alergica", pearl: "Prurito intenso con vesículas alérgicas, sin fiebre ni leucocitosis ni dolor exquisito al tacto." }
+        ]
+      },
+      {
+        id: "herpes_simple_zoster",
+        name: "Herpes Simple & Herpes Zóster",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo / Derivar", level: "aps" },
+        patognomonico: "Herpes Simple: racimo de vesículas sobre base eritematosa precedido de ardor/escozor prodrómico; Herpes Zóster: vesículas arracimadas con DOLOR NEUROPÁTICO UNILATERAL DISTRIBUIDO ESTRICTAMENTE EN UN DERMATOMA.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Herpes_zoster_chest.jpg/800px-Herpes_zoster_chest.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><path d="M50,70 Q90,40 130,70 Q170,100 200,60" fill="none" stroke="#ef4444" stroke-width="4"/><circle cx="70" cy="60" r="4" fill="#38bdf8"/><circle cx="95" cy="50" r="4" fill="#38bdf8"/><circle cx="140" cy="80" r="4.5" fill="#38bdf8"/><circle cx="165" cy="85" r="4" fill="#38bdf8"/><text x="120" y="125" fill="#93c5fd" font-size="9" text-anchor="middle">Vesículas arracimadas en banda unilateral de dermatoma</text></svg>`,
+        atlasCaption: "<strong>Herpes Zóster Torácico:</strong> Vesículas arracimadas unilaterales en dermatoma.",
+        subtipos: ["Herpes Simple Labial / Genital (HSV-1/2)", "Herpes Zóster Radicular (VZV)", "Zóster Oftálmico (signo de Hutchinson: vesícula en punta nasal)", "Ramsay Hunt (facial + ótico)."],
+        fisiopatologia: "Reactivación de virus neurotropos latentes en ganglios sensitivos raquídeos o de pares craneales ante disminución de inmunidad celular.",
+        clinica: ["Zóster: dolor quemante unilateral radicular seguido de racimos de vesículas en banda. HSV: racimo perioral o genital."],
+        diagnostico: ["Clínico directo."],
+        tratamiento: {
+          general: ["Iniciar antiviral antes de las primeras 72 h para prevenir neuralgia postherpética.", "Mantener lesiones secas."],
+          primera: [
+            "Zóster (<72 h): Valaciclovir 1.000 mg c/8 h VO por 7 días o Aciclovir 800 mg 5 veces/día VO por 7 días.",
+            "HSV: Valaciclovir 500 mg c/12 h VO por 5 días o Aciclovir 400 mg c/8 h VO por 5 días.",
+            "Analgesia: Paracetamol + Tramadol o Pregabalina 75 mg/día."
+          ],
+          segunda: ["Neuralgia postherpética (>3 meses): Pregabalina 75-150 mg/día o Gabapentina 300-900 mg/día."],
+          derivacion: ["Signo de Hutchinson positivo (URGENCIA Oftalmología para evitar necrosis corneal) o parálisis facial (Ramsay Hunt)."]
+        },
+        differentials: [
+          { id: "impetigo", pearl: "Impétigo da costras melicéricas amarillentas sin patrón dermatómico radicular y no duele con carácter neuropático previo." },
+          { id: "eritema_polimorfo", pearl: "Lesiones en diana concéntricas en extremidades acrales desencadenadas 1-2 semanas post-herpes simple." },
+          { id: "dermatitis_atopica", pearl: "Eczema herpeticum es la sobreinfección diseminada grave por herpes en piel atópica." }
+        ]
+      },
+      {
+        id: "molusco_contagioso",
+        name: "Molusco Contagioso",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Pápulas cupuliformes perladas o blanco-rosadas de 2-5 mm con UMBILICACIÓN CENTRAL patognomónica que libera material blanco caseoso al exprimirse (cuerpos de Henderson-Paterson).",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Molluscum_Contagiosum.jpg/800px-Molluscum_Contagiosum.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><circle cx="80" cy="70" r="22" fill="#fbcfe8" stroke="#f472b6" stroke-width="2"/><circle cx="80" cy="65" r="5" fill="#831843"/><circle cx="150" cy="65" r="26" fill="#fbcfe8" stroke="#f472b6" stroke-width="2"/><circle cx="150" cy="60" r="6" fill="#831843"/><text x="120" y="125" fill="#fbcfe8" font-size="9" text-anchor="middle">Pápula perlada cupuliforme con umbilicación central</text></svg>`,
+        atlasCaption: "<strong>Molusco Contagioso:</strong> Pápulas cupuliformes perladas umbilicadas centralmente.",
+        subtipos: ["Infantil (tronco, pliegues, piscinas)", "Adulto / ITS (genital, pubis)", "Molusco Gigante solitario en anciano."],
+        fisiopatologia: "Infección viral de queratinocitos por Molluscipoxvirus (Poxvirus ADN doble hebra). Autoinoculable.",
+        clinica: ["Pápulas cupuliformes perladas con ombligo o depresión central. Asintomáticas o con eccema perimolusco."],
+        diagnostico: ["Clínico directo visual."],
+        tratamiento: {
+          general: ["Tranquilidad a los padres: cuadro benigno autolimitado en 6 a 18 meses.", "Evitar compartir toallas o baños de tina."],
+          primera: [
+            "Curetaje / raspado mecánico simple con cureta bajo anestesia tópica (EMLA crema 1 h antes).",
+            "Crioterapia con nitrógeno líquido (spray 5 segundos).",
+            "Conducta expectante de observación si el niño no tolera procedimientos traumáticos."
+          ],
+          segunda: ["Hidróxido de potasio (KOH) tópico al 10% en solución nocturna hasta inflamación."],
+          derivacion: ["Moluscos gigantes o cientos de lesiones diseminadas en pacientes con sospecha de inmunodeficiencia / VIH."]
+        },
+        differentials: [
+          { id: "verrugas_vph", pearl: "Verrugas son hiperqueratósicas rugosas con puntos negros y sin umbilicación central perlada." },
+          { id: "cancer_piel_no_melanoma", pearl: "En adultos/ancianos, el molusco solitario gigante simula un carcinoma basocelular perlado nodular con telangiectasias." },
+          { id: "foliculitis_forunculo", pearl: "Foliculitis son pústulas foliculares con pelo central; el molusco es perlado umbilicado cupuliforme no folicular." }
+        ]
+      },
+      {
+        id: "verrugas_vph",
+        name: "Verrugas Cutáneas (VPH)",
+        category: "infecciosas",
+        categoryLabel: "Infecciones & Micosis",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo", level: "aps" },
+        patognomonico: "Pápulas o placas hiperqueratósicas de superficie rugosa áspera que INTERRUMPEN LAS LÍNEAS DE LA PIEL (dermatoglifos) y muestran PUNTOS NEGROS vasculares (capilares trombosados) al raspar.",
+        realImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Verruca_vulgaris.jpg/800px-Verruca_vulgaris.jpg",
+        svgDiagram: `<svg viewBox="0 0 240 140" class="w-full h-full max-h-36"><rect width="240" height="140" rx="10" fill="#1e1b4b"/><ellipse cx="120" cy="70" rx="35" ry="25" fill="#475569" stroke="#94a3b8" stroke-width="2"/><circle cx="110" cy="65" r="2" fill="#000000"/><circle cx="125" cy="70" r="2" fill="#000000"/><circle cx="118" cy="78" r="2" fill="#000000"/><text x="120" y="125" fill="#cbd5e1" font-size="9" text-anchor="middle">Superficie rugosa verrucosa + Puntos negros (capilares)</text></svg>`,
+        atlasCaption: "<strong>Verruga Vulgar:</strong> Pápula hiperqueratósica rugosa con interrupción de dermatoglifos.",
+        subtipos: ["Verrugas Vulgares (manos, dedos)", "Verrugas Plantares ('ojos de gallo', dolor a la compresión lateral)", "Verrugas Planas (rostro, dorso manos)."],
+        fisiopatologia: "Infección epidérmica por Virus del Papiloma Humano (VPH tipos 1, 2, 4, 7 en piel).",
+        clinica: ["Pápulas hiperqueratósicas duras rugosas. Interrumpen los dermatoglifos normales y sangran puntiforme al corte tangencial."],
+        diagnostico: ["Clínico directo."],
+        tratamiento: {
+          general: ["No manipular ni morder (autoinoculación)."],
+          primera: [
+            "Queratolíticos tópicos diarios: Ácido Salicílico 16.7% + Ácido Láctico 16.7% en colodión elástico tras limado nocturno por 8 a 12 semanas.",
+            "Crioterapia con nitrógeno líquido cada 2-3 semanas por dermatólogo."
+          ],
+          segunda: ["Imiquimod 5% crema o cinta adhesiva oclusiva (duct tape)."],
+          derivacion: ["Verrugas periungueales refractarias o condilomas acuminados genitales extensos."]
+        },
+        differentials: [
+          { id: "molusco_contagioso", pearl: "Molusco es perlado cupuliforme con umbilicación central lisa; la verruga es áspera hiperqueratósica con puntos negros." },
+          { id: "queratosis_seborreica", pearl: "Aspecto pegado ceroso de galleta untada con tapones córneos en adultos mayores; la verruga es viral dura." }
+        ]
+      }
+    ];
+
+    function synchronizeBidirectionalDifferentials() {
+      const validIds = new Set(DERMA_DATA.map(d => d.id));
+
+      // Purge invalid IDs
+      DERMA_DATA.forEach(item => {
+        item.differentials = item.differentials.filter(diff => validIds.has(diff.id));
+      });
+
+      // Synchronize bidirectional links
+      DERMA_DATA.forEach(source => {
+        source.differentials.forEach(diff => {
+          const target = DERMA_DATA.find(d => d.id === diff.id);
+          if (target) {
+            const hasReverse = target.differentials.some(d => d.id === source.id);
+            if (!hasReverse) {
+              target.differentials.push({
+                id: source.id,
+                pearl: `Diferencial con ${source.name}: ${source.patognomonico}`
+              });
+            }
+          }
+        });
+      });
+    }
+
+    synchronizeBidirectionalDifferentials();
+
+    // D3 Graph Nodes and Links setup
+    const graphNodes = DERMA_DATA.map(d => ({
+      id: d.id,
+      name: d.name,
+      category: d.category,
+      categoryLabel: d.categoryLabel,
+      color: d.color,
+      level: d.eunacom.level || "aps",
+      data: d
+    }));
+
+    const edgeMap = new Set();
+    const graphLinks = [];
+
+    DERMA_DATA.forEach(source => {
+      source.differentials.forEach(diff => {
+        const targetExists = DERMA_DATA.some(item => item.id === diff.id);
+        if (targetExists) {
+          const key = [source.id, diff.id].sort().join("<->");
+          if (!edgeMap.has(key)) {
+            edgeMap.add(key);
+            graphLinks.push({
+              source: source.id,
+              target: diff.id,
+              pearl: diff.pearl
+            });
+          }
+        }
+      });
+    });
+
+    let selectedNodeId = "dermatitis_atopica";
+    let activeCategory = "all";
+    let activeLevel = "all";
+    let currentSearchTerm = "";
+    let activeTab = "clinica";
+    let atlasViewMode = "photo";
+    let comparisonBasket = [];
+    let d3Simulation = null;
+    let d3Svg = null;
+    let d3Zoom = null;
+    let d3ContainerG = null;
+    let linkElements = null;
+    let nodeElements = null;
+    let labelElements = null;
+
+    function togglePathologyInBasket(id) {
+      const idx = comparisonBasket.indexOf(id);
+      if (idx > -1) {
+        comparisonBasket.splice(idx, 1);
+      } else {
+        comparisonBasket.push(id);
+      }
+      updateComparisonDock();
+      updateGraphVisuals();
+      if (activeTab === "diferenciales") {
+        selectPathology(selectedNodeId);
+      }
+    }
+
+    function isPathologyInBasket(id) {
+      return comparisonBasket.includes(id);
+    }
+
+    function updateComparisonDock() {
+      const dock = document.getElementById("compare-dock");
+      const counterText = document.getElementById("dock-counter-text");
+      const chipsContainer = document.getElementById("dock-chips-container");
+      const headerCount = document.getElementById("header-compare-count");
+
+      if (headerCount) headerCount.textContent = comparisonBasket.length;
+
+      if (comparisonBasket.length > 0) {
+        dock.classList.remove("translate-y-28", "opacity-0", "pointer-events-none");
+        dock.classList.add("translate-y-0", "opacity-100");
+        counterText.textContent = `${comparisonBasket.length} seleccionada${comparisonBasket.length > 1 ? "s" : ""}`;
+      } else {
+        dock.classList.add("translate-y-28", "opacity-0", "pointer-events-none");
+        dock.classList.remove("translate-y-0", "opacity-100");
+        counterText.textContent = `0 seleccionadas`;
+      }
+
+      chipsContainer.innerHTML = comparisonBasket.map(id => {
+        const item = DERMA_DATA.find(d => d.id === id);
+        if (!item) return "";
+        return `
+          <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-[11px] whitespace-nowrap">
+            <span class="w-2 h-2 rounded-full" style="background-color: ${item.color}"></span>
+            <span class="font-medium">${item.name}</span>
+            <button data-remove-id="${item.id}" class="btn-remove-chip text-slate-400 hover:text-white ml-0.5">
+              <i class="ph-bold ph-x text-[10px]"></i>
+            </button>
+          </div>
+        `;
+      }).join("");
+
+      document.querySelectorAll(".btn-remove-chip").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const remId = btn.getAttribute("data-remove-id");
+          togglePathologyInBasket(remId);
+        });
+      });
+    }
+
+    function initGraph() {
+      const container = document.getElementById("graph-container");
+      const width = container.clientWidth || window.innerWidth;
+      const height = container.clientHeight || window.innerHeight;
+
+      d3Svg = d3.select("#network-svg");
+      d3Svg.selectAll("*").remove();
+
+      d3ContainerG = d3Svg.append("g");
+
+      d3Zoom = d3.zoom()
+        .scaleExtent([0.25, 3])
+        .on("zoom", (event) => {
+          d3ContainerG.attr("transform", event.transform);
+        });
+
+      d3Svg.call(d3Zoom);
+
+      d3Simulation = d3.forceSimulation(graphNodes)
+        .force("link", d3.forceLink(graphLinks).id(d => d.id).distance(120).strength(0.35))
+        .force("charge", d3.forceManyBody().strength(-360))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius(48));
+
+      linkElements = d3ContainerG.append("g")
+        .attr("class", "links")
+        .selectAll("line")
+        .data(graphLinks)
+        .enter().append("line")
+        .attr("stroke", "#334155")
+        .attr("stroke-width", 1.5)
+        .attr("stroke-opacity", 0.45);
+
+      nodeElements = d3ContainerG.append("g")
+        .attr("class", "nodes")
+        .selectAll("g")
+        .data(graphNodes)
+        .enter().append("g")
+        .attr("class", "cursor-pointer")
+        .call(d3.drag()
+          .on("start", dragstarted)
+          .on("drag", dragged)
+          .on("end", dragended))
+        .on("click", (event, d) => {
+          selectPathology(d.id);
+        });
+
+      nodeElements.append("circle")
+        .attr("class", "halo-ring")
+        .attr("r", 28)
+        .attr("fill", "none")
+        .attr("stroke", d => d.color)
+        .attr("stroke-width", 2)
+        .attr("stroke-opacity", 0)
+        .attr("stroke-dasharray", "4,4");
+
+      nodeElements.append("circle")
+        .attr("class", "basket-indicator")
+        .attr("r", 32)
+        .attr("fill", "none")
+        .attr("stroke", "#818cf8")
+        .attr("stroke-width", 2)
+        .attr("stroke-dasharray", "2,2")
+        .attr("stroke-opacity", 0);
+
+      nodeElements.append("circle")
+        .attr("class", "main-circle")
+        .attr("r", 21)
+        .attr("fill", d => d.color)
+        .attr("fill-opacity", 0.85)
+        .attr("stroke", "#0f172a")
+        .attr("stroke-width", 3)
+        .style("transition", "all 0.2s");
+
+      nodeElements.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "central")
+        .attr("fill", "#ffffff")
+        .attr("font-size", "11px")
+        .attr("font-weight", "bold")
+        .text(d => d.name.substring(0, 2).toUpperCase());
+
+      labelElements = d3ContainerG.append("g")
+        .attr("class", "labels")
+        .selectAll("text")
+        .data(graphNodes)
+        .enter().append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", 35)
+        .attr("fill", "#cbd5e1")
+        .attr("font-size", "10px")
+        .attr("font-weight", "600")
+        .attr("pointer-events", "none")
+        .text(d => d.name.length > 20 ? d.name.substring(0, 18) + "…" : d.name)
+        .style("text-shadow", "0 2px 4px #020617");
+
+      d3Simulation.on("tick", () => {
+        linkElements
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+        nodeElements.attr("transform", d => `translate(${d.x},${d.y})`);
+        labelElements.attr("x", d => d.x).attr("y", d => d.y);
+      });
+
+      d3Svg.call(d3Zoom.transform, d3.zoomIdentity.translate(0, 0).scale(0.85));
+      updateGraphVisuals();
+    }
+
+    function dragstarted(event, d) {
+      if (!event.active) d3Simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+      if (!event.active) d3Simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+    function updateGraphVisuals() {
+      if (!nodeElements || !linkElements) return;
+
+      const currentPathology = DERMA_DATA.find(p => p.id === selectedNodeId);
+      const neighborIds = new Set();
+      if (currentPathology) {
+        currentPathology.differentials.forEach(diff => neighborIds.add(diff.id));
+      }
+
+      nodeElements.each(function(d) {
+        const isSelected = d.id === selectedNodeId;
+        const isNeighbor = neighborIds.has(d.id);
+        const inBasket = isPathologyInBasket(d.id);
+        const matchesCat = activeCategory === "all" || d.category === activeCategory;
+        const matchesLevel = activeLevel === "all" || d.level === activeLevel;
+        const matchesSearch = currentSearchTerm === "" || 
+          d.name.toLowerCase().includes(currentSearchTerm) ||
+          d.data.fisiopatologia.toLowerCase().includes(currentSearchTerm) ||
+          d.data.tratamiento.primera.some(t => t.toLowerCase().includes(currentSearchTerm));
+
+        const isDimmed = (!matchesCat || !matchesLevel || !matchesSearch) && !isSelected;
+        const element = d3.select(this);
+
+        element.select(".main-circle")
+          .attr("r", isSelected ? 26 : (isNeighbor ? 22 : 19))
+          .attr("fill-opacity", isDimmed ? 0.2 : (isSelected ? 1 : 0.85))
+          .attr("stroke", isSelected ? "#38bdf8" : (inBasket ? "#818cf8" : "#0f172a"))
+          .attr("stroke-width", isSelected ? 4 : (inBasket ? 3 : 2));
+
+        element.select(".halo-ring")
+          .attr("r", isSelected ? 34 : 28)
+          .attr("stroke-opacity", isSelected ? 0.9 : 0)
+          .classed("node-active-glow", isSelected);
+
+        element.select(".basket-indicator")
+          .attr("stroke-opacity", inBasket ? 0.85 : 0)
+          .attr("stroke", inBasket ? "#818cf8" : "none");
+      });
+
+      labelElements
+        .attr("fill", d => d.id === selectedNodeId ? "#38bdf8" : (neighborIds.has(d.id) ? "#f8fafc" : "#94a3b8"))
+        .attr("font-size", d => d.id === selectedNodeId ? "11px" : "10px")
+        .attr("font-weight", d => d.id === selectedNodeId ? "800" : "600")
+        .attr("opacity", d => {
+          const matchesCat = activeCategory === "all" || d.category === activeCategory;
+          const matchesLevel = activeLevel === "all" || d.level === activeLevel;
+          const matchesSearch = currentSearchTerm === "" || d.name.toLowerCase().includes(currentSearchTerm);
+          return (matchesCat && matchesLevel && matchesSearch) || d.id === selectedNodeId ? 1 : 0.25;
+        });
+
+      linkElements
+        .attr("stroke", d => {
+          const sourceId = typeof d.source === "object" ? d.source.id : d.source;
+          const targetId = typeof d.target === "object" ? d.target.id : d.target;
+          if (sourceId === selectedNodeId || targetId === selectedNodeId) return "#38bdf8";
+          return "#334155";
+        })
+        .attr("stroke-width", d => {
+          const sourceId = typeof d.source === "object" ? d.source.id : d.source;
+          const targetId = typeof d.target === "object" ? d.target.id : d.target;
+          return (sourceId === selectedNodeId || targetId === selectedNodeId) ? 3 : 1.2;
+        })
+        .attr("stroke-opacity", d => {
+          const sourceId = typeof d.source === "object" ? d.source.id : d.source;
+          const targetId = typeof d.target === "object" ? d.target.id : d.target;
+          if (sourceId === selectedNodeId || targetId === selectedNodeId) return 0.95;
+          return 0.2;
+        });
+    }
+
+    function selectPathology(id) {
+      const item = DERMA_DATA.find(p => p.id === id);
+      if (!item) return;
+
+      selectedNodeId = id;
+      updateGraphVisuals();
+
+      const drawer = document.getElementById("pathology-drawer");
+      drawer.classList.remove("translate-x-full");
+
+      document.getElementById("drawer-title").textContent = item.name;
+      document.getElementById("drawer-subtitle").textContent = item.categoryLabel;
+
+      const catBadge = document.getElementById("drawer-category-badge");
+      catBadge.textContent = item.categoryLabel;
+      catBadge.style.borderColor = item.color + "50";
+      catBadge.style.backgroundColor = item.color + "20";
+      catBadge.style.color = item.color;
+
+      const eunacomBadge = document.getElementById("drawer-eunacom-badge");
+      eunacomBadge.textContent = `Diag: ${item.eunacom.diag} | Tto: ${item.eunacom.tto}`;
+
+      const levelBadge = document.getElementById("drawer-level-badge");
+      if (item.eunacom.level === "urgencia") {
+        levelBadge.className = "px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/40";
+        levelBadge.textContent = "Urgencia Vital";
+      } else if (item.eunacom.level === "derivar") {
+        levelBadge.className = "px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40";
+        levelBadge.textContent = "Derivar Dermatólogo";
+      } else {
+        levelBadge.className = "px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+        levelBadge.textContent = "Manejo APS";
+      }
+
+      document.getElementById("eunacom-diag").textContent = item.eunacom.diag;
+      document.getElementById("eunacom-tto").textContent = item.eunacom.tto;
+      document.getElementById("eunacom-seg").textContent = item.eunacom.seg;
+
+      document.getElementById("drawer-fisiopato").innerHTML = item.fisiopatologia;
+
+      // Subtypes and Complications
+      const subtiposBox = document.getElementById("drawer-subtipos");
+      const subtiposWrapper = document.getElementById("drawer-subtipos-wrapper");
+      if (item.subtipos && item.subtipos.length > 0) {
+        subtiposWrapper.classList.remove("hidden");
+        subtiposBox.innerHTML = item.subtipos.map(s => `
+          <div class="flex items-start gap-2">
+            <i class="ph-bold ph-arrow-elbow-down-right text-indigo-400 mt-0.5 shrink-0 text-xs"></i>
+            <div>${s}</div>
+          </div>
+        `).join("");
+      } else {
+        subtiposWrapper.classList.add("hidden");
+      }
+
+      // Atlas Semiológico Dual Loader
+      updateAtlasDisplay(item);
+
+      // Cuadro Clínico
+      const clinicaBox = document.getElementById("drawer-clinica");
+      clinicaBox.innerHTML = item.clinica.map(c => `
+        <div class="flex items-start gap-2">
+          <i class="ph-fill ph-caret-right text-cyan-400 mt-0.5 shrink-0"></i>
+          <div>${c}</div>
+        </div>
+      `).join("");
+
+      // Diagnóstico y Criterios
+      const diagBox = document.getElementById("drawer-diag-criterios");
+      diagBox.innerHTML = item.diagnostico.map(d => `
+        <div class="flex items-start gap-2">
+          <i class="ph-fill ph-check text-emerald-400 mt-0.5 shrink-0"></i>
+          <div>${d}</div>
+        </div>
+      `).join("");
+
+      // Tratamiento General
+      const ttoGenBox = document.getElementById("drawer-tto-general");
+      ttoGenBox.innerHTML = item.tratamiento.general.map(g => `
+        <div class="flex items-start gap-2">
+          <i class="ph-bold ph-shield text-cyan-400 mt-0.5 shrink-0"></i>
+          <span>${g}</span>
+        </div>
+      `).join("");
+
+      // Tratamiento 1ª Línea
+      const ttoPrimBox = document.getElementById("drawer-tto-primera");
+      ttoPrimBox.innerHTML = item.tratamiento.primera.map(p => `
+        <div class="border-l-2 border-emerald-500/60 pl-2.5 py-0.5">
+          ${p}
+        </div>
+      `).join("");
+
+      // Tratamiento 2ª Línea
+      const ttoSegBox = document.getElementById("drawer-tto-segunda");
+      ttoSegBox.innerHTML = item.tratamiento.segunda.map(s => `
+        <div class="flex items-start gap-2">
+          <i class="ph-bold ph-caret-circle-double-up text-amber-400 mt-0.5 shrink-0"></i>
+          <span>${s}</span>
+        </div>
+      `).join("");
+
+      // Derivación
+      const derivBox = document.getElementById("drawer-derivacion");
+      derivBox.innerHTML = item.tratamiento.derivacion.map(dev => `
+        <div class="flex items-start gap-2">
+          <i class="ph-bold ph-warning-octagon text-rose-400 mt-0.5 shrink-0"></i>
+          <span>${dev}</span>
+        </div>
+      `).join("");
+
+      // Diferenciales
+      document.getElementById("diff-count").textContent = item.differentials.length;
+      document.getElementById("diff-anchor-title").textContent = item.name;
+
+      const isAnchorInBasket = isPathologyInBasket(item.id);
+      const addAnchorBtn = document.getElementById("add-anchor-to-compare-btn");
+      if (addAnchorBtn) {
+        addAnchorBtn.className = `text-[10px] px-2.5 py-1 rounded-md font-medium flex items-center gap-1 transition ${
+          isAnchorInBasket ? "bg-indigo-600 text-white font-bold" : "bg-cyan-900/60 hover:bg-cyan-800 text-cyan-300"
+        }`;
+        addAnchorBtn.innerHTML = isAnchorInBasket 
+          ? `<i class="ph-bold ph-check"></i> Foco en comparador` 
+          : `<i class="ph-bold ph-plus-circle"></i> Agregar foco al comparador`;
+      }
+
+      const diffListBox = document.getElementById("drawer-diff-list");
+      diffListBox.innerHTML = item.differentials.map(diff => {
+        const targetData = DERMA_DATA.find(d => d.id === diff.id);
+        const targetName = targetData ? targetData.name : diff.id;
+        const targetCategory = targetData ? targetData.categoryLabel : "Dermatología";
+        const targetColor = targetData ? targetData.color : "#38bdf8";
+        const inBasket = isPathologyInBasket(diff.id);
+
+        return `
+          <div class="p-3 rounded-xl bg-slate-950/80 border ${inBasket ? "border-indigo-500/80 bg-indigo-950/30" : "border-slate-800 hover:border-cyan-500/50"} transition space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${targetColor}"></span>
+                <h5 class="text-xs font-bold text-white">${targetName}</h5>
+                <span class="text-[10px] px-1.5 py-0.2 rounded text-slate-400 bg-slate-900 border border-slate-800 hidden sm:inline">${targetCategory}</span>
+              </div>
+              <button data-toggle-basket="${diff.id}" class="btn-toggle-basket px-2.5 py-1 rounded text-[11px] font-semibold border transition ${inBasket ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30" : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700"}">
+                ${inBasket ? "<i class='ph-bold ph-check'></i> Seleccionada" : "<i class='ph-bold ph-plus'></i> Comparar"}
+              </button>
+            </div>
+
+            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/80 text-[11px] text-slate-300 leading-relaxed">
+              <span class="text-amber-400 font-bold block mb-0.5 text-[10px] uppercase tracking-wider flex items-center gap-1">
+                <i class="ph-bold ph-lightbulb"></i> Perla de diferenciación rápida:
+              </span>
+              ${diff.pearl}
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/60">
+              <button data-compare-with="${diff.id}" class="btn-open-comparator flex-1 py-1.5 px-2.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900/90 text-cyan-300 hover:text-cyan-200 border border-cyan-800/60 font-semibold text-[11px] flex items-center justify-center gap-1.5 transition">
+                <i class="ph-bold ph-scales"></i> Comparar con foco
+              </button>
+              <button data-switch-to="${diff.id}" class="btn-switch-focus py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium text-[11px] flex items-center gap-1 transition" title="Cambiar foco">
+                <span>Cambiar foco</span> <i class="ph-bold ph-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.querySelectorAll(".btn-open-comparator").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const targetId = btn.getAttribute("data-compare-with");
+          if (!comparisonBasket.includes(selectedNodeId)) comparisonBasket.push(selectedNodeId);
+          if (!comparisonBasket.includes(targetId)) comparisonBasket.push(targetId);
+          updateComparisonDock();
+          openMultiComparator();
+        });
+      });
+
+      document.querySelectorAll(".btn-toggle-basket").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const targetId = btn.getAttribute("data-toggle-basket");
+          togglePathologyInBasket(targetId);
+        });
+      });
+
+      document.querySelectorAll(".btn-switch-focus").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const targetId = btn.getAttribute("data-switch-to");
+          selectPathology(targetId);
+          centerGraphOnNode(targetId);
+        });
+      });
+    }
+
+    function updateAtlasDisplay(item) {
+      const realImg = document.getElementById("atlas-real-img");
+      const svgContainer = document.getElementById("atlas-svg-container");
+      const customImg = document.getElementById("atlas-custom-img");
+      const loading = document.getElementById("atlas-loading");
+      const caption = document.getElementById("drawer-atlas-caption");
+      const extLink = document.getElementById("atlas-external-link");
+      const btnPhoto = document.getElementById("view-mode-photo");
+      const btnSvg = document.getElementById("view-mode-svg");
+
+      if (customImg) customImg.classList.add("hidden");
+
+      if (caption) {
+        caption.innerHTML = item.atlasCaption || item.patognomonico;
+      }
+
+      if (extLink) {
+        if (item.realImageUrl) {
+          extLink.href = item.realImageUrl;
+          extLink.classList.remove("hidden");
+        } else {
+          extLink.classList.add("hidden");
+        }
+      }
+
+      if (svgContainer) {
+        svgContainer.innerHTML = item.svgDiagram || `<div class="text-slate-500 text-xs">Esquema vectorial en preparación</div>`;
+      }
+
+      if (atlasViewMode === "photo" && item.realImageUrl) {
+        if (btnPhoto) {
+          btnPhoto.className = "px-2 py-0.5 rounded bg-cyan-600 text-white font-bold transition flex items-center gap-1";
+        }
+        if (btnSvg) {
+          btnSvg.className = "px-2 py-0.5 rounded text-slate-400 hover:text-white transition flex items-center gap-1";
+        }
+
+        if (svgContainer) svgContainer.classList.add("hidden");
+        if (realImg) {
+          realImg.classList.remove("hidden");
+          if (loading) loading.classList.remove("hidden");
+
+          realImg.onload = () => {
+            if (loading) loading.classList.add("hidden");
+          };
+          realImg.onerror = () => {
+            // Fallback to SVG diagram if image fails
+            if (loading) loading.classList.add("hidden");
+            realImg.classList.add("hidden");
+            if (svgContainer) svgContainer.classList.remove("hidden");
+          };
+
+          realImg.src = item.realImageUrl;
+        }
+      } else {
+        if (btnSvg) {
+          btnSvg.className = "px-2 py-0.5 rounded bg-cyan-600 text-white font-bold transition flex items-center gap-1";
+        }
+        if (btnPhoto) {
+          btnPhoto.className = "px-2 py-0.5 rounded text-slate-400 hover:text-white transition flex items-center gap-1";
+        }
+
+        if (realImg) realImg.classList.add("hidden");
+        if (loading) loading.classList.add("hidden");
+        if (svgContainer) svgContainer.classList.remove("hidden");
+      }
+    }
+
+    function openMultiComparator() {
+      if (comparisonBasket.length < 2) {
+        if (!comparisonBasket.includes(selectedNodeId)) {
+          comparisonBasket.unshift(selectedNodeId);
+        }
+        if (comparisonBasket.length < 2) {
+          const curObj = DERMA_DATA.find(d => d.id === selectedNodeId);
+          if (curObj && curObj.differentials.length > 0) {
+            comparisonBasket.push(curObj.differentials[0].id);
+          }
+        }
+      }
+
+      const items = comparisonBasket.map(id => DERMA_DATA.find(d => d.id === id)).filter(Boolean);
+      if (items.length === 0) return;
+
+      document.getElementById("comp-modal-tag").textContent = `Comparando ${items.length} Patologías Simultáneamente`;
+
+      // 1. Column Headers
+      const headersContainer = document.getElementById("multi-comp-headers");
+      headersContainer.innerHTML = items.map(item => `
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-2 flex-1 min-w-[240px] max-w-sm">
+          <div class="space-y-1">
+            <div class="flex items-center justify-between gap-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold" style="background-color: ${item.color}20; color: ${item.color}; border: 1px solid ${item.color}40">
+                ${item.categoryLabel}
+              </span>
+              ${items.length > 2 ? `
+                <button data-remove-from-matrix="${item.id}" class="btn-matrix-remove text-slate-500 hover:text-rose-400 p-1 rounded transition no-print" title="Quitar de la comparativa">
+                  <i class="ph-bold ph-x text-xs"></i>
+                </button>
+              ` : ""}
+            </div>
+            <h4 class="text-sm font-extrabold text-white leading-tight">${item.name}</h4>
+          </div>
+          <div class="pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+            <span class="text-slate-400 font-mono-code">${item.eunacom.diag} | ${item.eunacom.tto}</span>
+            <button data-make-focus="${item.id}" class="btn-matrix-focus text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-0.5 no-print">
+              Hacer foco <i class="ph-bold ph-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      `).join("");
+
+      // 2. Targeted Puntos de Unión & Reglas de Oro adaptadas
+      const commonContainer = document.getElementById("multi-comp-common");
+      let dynamicDesafio = `Estas ${items.length} patologías (${items.map(i => `<em>${i.name}</em>`).join(", ")}) comparten morfología clínica y constituyen opciones diagnósticas cruzadas en el internado y examen EUNACOM.`;
+
+      // Targeted pairwise pearls
+      const directPairPearls = [];
+      for (let i = 0; i < items.length; i++) {
+        for (let j = 0; j < items.length; j++) {
+          if (i !== j) {
+            const match = items[i].differentials.find(d => d.id === items[j].id);
+            if (match) {
+              const pairKey = [items[i].id, items[j].id].sort().join(" vs ");
+              if (!directPairPearls.some(p => p.key === pairKey)) {
+                directPairPearls.push({
+                  key: pairKey,
+                  from: items[i],
+                  to: items[j],
+                  pearl: match.pearl
+                });
+              }
+            }
+          }
+        }
+      }
+
+      const formattedPairList = directPairPearls.slice(0, 4).map(pair => `
+        <div class="flex items-start gap-2.5 bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+          <span class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background-color: ${pair.from.color}"></span>
+          <div class="text-[11px] leading-relaxed">
+            <strong class="text-amber-400 font-bold">[Contraste Directo: ${pair.from.name} vs. ${pair.to.name}]:</strong>
+            <span class="text-slate-300 ml-1">${pair.pearl}</span>
+          </div>
+        </div>
+      `).join("");
+
+      const individualPearls = items.map(item => `
+        <div class="flex items-start gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-full mt-1 shrink-0 shadow-sm" style="background-color: ${item.color}" title="${item.name}"></span>
+          <div class="text-[11px] leading-relaxed">
+            <strong class="text-white font-bold" style="color: ${item.color}">[Clave Patognomónica: ${item.name}]:</strong>
+            <span class="text-slate-300 ml-1">${item.patognomonico || item.fisiopatologia}</span>
+          </div>
+        </div>
+      `).join("");
+
+      commonContainer.innerHTML = `
+        <div class="flex items-start gap-2.5 pb-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 mt-1 shrink-0 shadow-sm shadow-cyan-400/50"></span>
+          <div class="text-[11px] leading-relaxed">
+            <strong class="text-cyan-400 uppercase tracking-wider">Desafío Clínico de Descarte:</strong>
+            <span class="text-slate-200 ml-1">${dynamicDesafio}</span>
+          </div>
+        </div>
+
+        ${directPairPearls.length > 0 ? `
+          <div class="space-y-1.5 pt-1.5 border-t border-slate-800/80">
+            <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1">
+              <i class="ph-bold ph-arrows-left-right"></i> Comparación Frente a Frente entre las Seleccionadas:
+            </span>
+            ${formattedPairList}
+          </div>
+        ` : ""}
+
+        <div class="space-y-1.5 pt-2 border-t border-slate-800/80">
+          <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider flex items-center gap-1">
+            <i class="ph-bold ph-check-circle"></i> Claves Individuales de Descarte EUNACOM:
+          </span>
+          ${individualPearls}
+        </div>
+      `;
+
+      // 3. Matrix Table Body
+      const tableBody = document.getElementById("multi-comp-table-body");
+      const dimensions = [
+        {
+          title: "Mecanismo & Fisiopatología",
+          icon: "ph-dna",
+          color: "text-purple-400",
+          getter: (item) => `<div class="leading-relaxed text-slate-300 text-[11px]">${item.fisiopatologia}</div>`
+        },
+        {
+          title: "Subtipos Clínicos & Complicaciones Mayores",
+          icon: "ph-git-fork",
+          color: "text-indigo-400",
+          getter: (item) => `
+            <div class="space-y-1 text-slate-300 text-[11px]">
+              ${(item.subtipos || []).map(s => `<div class="flex items-start gap-1"><i class="ph-bold ph-arrow-elbow-down-right text-indigo-400 mt-0.5 shrink-0 text-[10px]"></i><div>${s}</div></div>`).join("")}
+            </div>
+          `
+        },
+        {
+          title: "Síntoma Cardinal & Topografía",
+          icon: "ph-stethoscope",
+          color: "text-cyan-400",
+          getter: (item) => `
+            <div class="space-y-1 text-slate-300 text-[11px]">
+              ${item.clinica.map(c => `<div class="flex items-start gap-1"><i class="ph-fill ph-caret-right text-cyan-400 mt-0.5 shrink-0 text-[10px]"></i><div>${c}</div></div>`).join("")}
+            </div>
+          `
+        },
+        {
+          title: "Confirmación & Criterios",
+          icon: "ph-check-circle",
+          color: "text-emerald-400",
+          getter: (item) => `
+            <div class="space-y-1 text-slate-300 text-[11px]">
+              ${item.diagnostico.map(d => `<div class="flex items-start gap-1"><i class="ph-bold ph-check text-emerald-400 mt-0.5 shrink-0 text-[10px]"></i><div>${d}</div></div>`).join("")}
+            </div>
+          `
+        },
+        {
+          title: "Criterios de Derivación",
+          icon: "ph-warning",
+          color: "text-rose-400",
+          getter: (item) => `
+            <div class="space-y-1 text-rose-200/90 text-[11px]">
+              ${item.tratamiento.derivacion.map(dev => `<div class="flex items-start gap-1"><i class="ph-bold ph-warning-octagon text-rose-400 mt-0.5 shrink-0 text-[10px]"></i><div>${dev}</div></div>`).join("")}
+            </div>
+          `
+        }
+      ];
+
+      tableBody.innerHTML = dimensions.map(dim => `
+        <tr class="bg-slate-900/50">
+          <td colspan="${items.length}" class="py-2 px-3 text-[11px] font-bold uppercase tracking-wider ${dim.color} bg-slate-950/80 border-b border-slate-800 flex items-center gap-1.5 sticky left-0">
+            <i class="ph-bold ${dim.icon} text-xs"></i>
+            <span>${dim.title}</span>
+          </td>
+        </tr>
+        <tr class="divide-x divide-slate-800 bg-slate-900/30">
+          ${items.map(item => `
+            <td class="p-3 align-top min-w-[240px] max-w-sm">
+              ${dim.getter(item)}
+            </td>
+          `).join("")}
+        </tr>
+      `).join("");
+
+      // 4. Comparative Treatments
+      const treatmentsContainer = document.getElementById("multi-comp-treatments");
+      treatmentsContainer.innerHTML = items.map(item => `
+        <div class="p-3 rounded-xl bg-slate-950/90 border border-emerald-900/40 space-y-2 font-mono-code text-[11px] flex-1 min-w-[240px] max-w-sm">
+          <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-emerald-900/40 pb-1.5">
+            <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${item.color}"></span>
+            <span class="truncate">Tto 1ª Línea: ${item.name}</span>
+          </div>
+          <div class="space-y-1.5 text-slate-200">
+            ${item.tratamiento.primera.map(t => `<div class="border-l-2 border-emerald-500/50 pl-2 py-0.5 leading-tight">${t}</div>`).join("")}
+          </div>
+        </div>
+      `).join("");
+
+      // Matrix button listeners
+      document.querySelectorAll(".btn-matrix-remove").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-remove-from-matrix");
+          togglePathologyInBasket(id);
+          openMultiComparator();
+        });
+      });
+
+      document.querySelectorAll(".btn-matrix-focus").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-make-focus");
+          selectPathology(id);
+          centerGraphOnNode(id);
+          document.getElementById("comparator-modal").classList.add("hidden");
+        });
+      });
+
+      document.getElementById("comparator-modal").classList.remove("hidden");
+    }
+
+    function centerGraphOnNode(nodeId) {
+      const nodeObj = graphNodes.find(n => n.id === nodeId);
+      if (!nodeObj || !d3Svg) return;
+
+      const container = document.getElementById("graph-container");
+      const width = container.clientWidth || window.innerWidth;
+      const height = container.clientHeight || window.innerHeight;
+
+      d3Svg.transition().duration(750).call(
+        d3Zoom.transform,
+        d3.zoomIdentity
+          .translate(width / 2, height / 2)
+          .scale(1.25)
+          .translate(-nodeObj.x, -nodeObj.y)
+      );
+    }
+
+    function renderListView() {
+      const grid = document.getElementById("cards-grid");
+      const filtered = DERMA_DATA.filter(item => {
+        const matchesCat = activeCategory === "all" || item.category === activeCategory;
+        const matchesLevel = activeLevel === "all" || item.eunacom.level === activeLevel;
+        const matchesSearch = currentSearchTerm === "" ||
+          item.name.toLowerCase().includes(currentSearchTerm) ||
+          item.fisiopatologia.toLowerCase().includes(currentSearchTerm) ||
+          item.tratamiento.primera.some(t => t.toLowerCase().includes(currentSearchTerm));
+        return matchesCat && matchesLevel && matchesSearch;
+      });
+
+      document.getElementById("list-count").textContent = `${filtered.length} Patologías`;
+
+      grid.innerHTML = filtered.map(item => {
+        const inBasket = isPathologyInBasket(item.id);
+        return `
+          <div data-id="${item.id}" class="list-item-card cursor-pointer bg-slate-900/90 hover:bg-slate-850 border ${inBasket ? "border-indigo-500/80 bg-indigo-950/20" : "border-slate-800 hover:border-cyan-500/60"} p-4 rounded-xl shadow-lg transition space-y-3 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold" style="background-color: ${item.color}20; color: ${item.color}; border: 1px solid ${item.color}40">
+                  ${item.categoryLabel}
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono-code">${item.eunacom.diag} | ${item.eunacom.tto}</span>
+              </div>
+              <h3 class="text-sm font-bold text-white">${item.name}</h3>
+              <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${item.fisiopatologia}</p>
+            </div>
+            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+              <button data-list-basket="${item.id}" class="btn-list-basket text-[11px] font-semibold px-2 py-1 rounded transition ${inBasket ? "bg-indigo-600 text-white" : "bg-slate-800 hover:bg-slate-700 text-indigo-300"}">
+                ${inBasket ? "<i class='ph-bold ph-check'></i> Comparando" : "<i class='ph-bold ph-plus'></i> Comparar"}
+              </button>
+              <button data-open-sheet="${item.id}" class="text-cyan-400 font-semibold text-[11px] flex items-center gap-1 hover:underline">
+                Abrir ficha <i class="ph-bold ph-caret-right"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.querySelectorAll(".btn-list-basket").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute("data-list-basket");
+          togglePathologyInBasket(id);
+          renderListView();
+        });
+      });
+
+      document.querySelectorAll(".list-item-card").forEach(card => {
+        card.addEventListener("click", () => {
+          const id = card.getAttribute("data-id");
+          selectPathology(id);
+          document.getElementById("mode-graph").click();
+          setTimeout(() => centerGraphOnNode(id), 300);
+        });
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initGraph();
+      selectPathology(selectedNodeId);
+      renderListView();
+      updateComparisonDock();
+
+      const totalCountBadge = document.getElementById("cat-total-count");
+      if (totalCountBadge) totalCountBadge.textContent = DERMA_DATA.length;
+
+      const closeGraphHintBtn = document.getElementById("close-graph-hint");
+      const graphHint = document.getElementById("graph-hint");
+      if (closeGraphHintBtn && graphHint) {
+        closeGraphHintBtn.addEventListener("click", () => {
+          graphHint.classList.add("opacity-0", "pointer-events-none");
+          setTimeout(() => graphHint.remove(), 250);
+        });
+      }
+
+      // Atlas Mode Toggle Listeners
+      const btnViewPhoto = document.getElementById("view-mode-photo");
+      const btnViewSvg = document.getElementById("view-mode-svg");
+      if (btnViewPhoto && btnViewSvg) {
+        btnViewPhoto.addEventListener("click", () => {
+          atlasViewMode = "photo";
+          const item = DERMA_DATA.find(p => p.id === selectedNodeId);
+          if (item) updateAtlasDisplay(item);
+        });
+        btnViewSvg.addEventListener("click", () => {
+          atlasViewMode = "svg";
+          const item = DERMA_DATA.find(p => p.id === selectedNodeId);
+          if (item) updateAtlasDisplay(item);
+        });
+      }
+
+      // EUNACOM Level Filter Pills
+      document.querySelectorAll(".level-pill").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".level-pill").forEach(p => {
+            p.classList.remove("active", "bg-cyan-500", "text-slate-950", "font-bold");
+            p.classList.add("border-transparent");
+          });
+          btn.classList.add("active", "bg-cyan-500", "text-slate-950", "font-bold");
+          btn.classList.remove("border-transparent");
+
+          activeLevel = btn.getAttribute("data-level");
+          updateGraphVisuals();
+          renderListView();
+        });
+      });
+
+      // View Switcher (Graph vs List)
+      const modeGraphBtn = document.getElementById("mode-graph");
+      const modeListBtn = document.getElementById("mode-list");
+      const graphContainer = document.getElementById("graph-container");
+      const listContainer = document.getElementById("list-container");
+
+      modeGraphBtn.addEventListener("click", () => {
+        modeGraphBtn.classList.add("bg-cyan-600", "text-white");
+        modeGraphBtn.classList.remove("text-slate-400");
+        modeListBtn.classList.remove("bg-cyan-600", "text-white");
+        modeListBtn.classList.add("text-slate-400");
+        graphContainer.classList.remove("hidden");
+        listContainer.classList.add("hidden");
+      });
+
+      modeListBtn.addEventListener("click", () => {
+        modeListBtn.classList.add("bg-cyan-600", "text-white");
+        modeListBtn.classList.remove("text-slate-400");
+        modeGraphBtn.classList.remove("bg-cyan-600", "text-white");
+        modeGraphBtn.classList.add("text-slate-400");
+        graphContainer.classList.add("hidden");
+        listContainer.classList.remove("hidden");
+        renderListView();
+      });
+
+      // Drawer Tabs
+      const tabBtns = {
+        clinica: document.getElementById("tab-btn-clinica"),
+        tratamiento: document.getElementById("tab-btn-tratamiento"),
+        galeria: document.getElementById("tab-btn-galeria"),
+        diferenciales: document.getElementById("tab-btn-diferenciales")
+      };
+      const tabPanels = {
+        clinica: document.getElementById("tab-panel-clinica"),
+        tratamiento: document.getElementById("tab-panel-tratamiento"),
+        galeria: document.getElementById("tab-panel-galeria"),
+        diferenciales: document.getElementById("tab-panel-diferenciales")
+      };
+
+      function switchTab(name) {
+        activeTab = name;
+        Object.keys(tabBtns).forEach(key => {
+          if (key === name) {
+            tabBtns[key].classList.add("text-cyan-400", "border-cyan-400");
+            tabBtns[key].classList.remove("text-slate-400", "border-transparent");
+            tabPanels[key].classList.remove("hidden");
+          } else {
+            tabBtns[key].classList.remove("text-cyan-400", "border-cyan-400");
+            tabBtns[key].classList.add("text-slate-400", "border-transparent");
+            tabPanels[key].classList.add("hidden");
+          }
+        });
+      }
+
+      tabBtns.clinica.addEventListener("click", () => switchTab("clinica"));
+      tabBtns.tratamiento.addEventListener("click", () => switchTab("tratamiento"));
+      tabBtns.galeria.addEventListener("click", () => {
+        switchTab("galeria");
+        const item = DERMA_DATA.find(p => p.id === selectedNodeId);
+        if (item) updateAtlasDisplay(item);
+      });
+      tabBtns.diferenciales.addEventListener("click", () => {
+        switchTab("diferenciales");
+        selectPathology(selectedNodeId);
+      });
+
+      // Local Custom Image Upload
+      const localImageInput = document.getElementById("local-image-input");
+      if (localImageInput) {
+        localImageInput.addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const customImg = document.getElementById("atlas-custom-img");
+              const realImg = document.getElementById("atlas-real-img");
+              const svgContainer = document.getElementById("atlas-svg-container");
+              if (customImg) {
+                customImg.src = event.target.result;
+                customImg.classList.remove("hidden");
+                if (realImg) realImg.classList.add("hidden");
+                if (svgContainer) svgContainer.classList.add("hidden");
+              }
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+
+      // Search Handler
+      const searchInput = document.getElementById("search-input");
+      const clearSearchBtn = document.getElementById("clear-search");
+
+      searchInput.addEventListener("input", (e) => {
+        currentSearchTerm = e.target.value.toLowerCase().trim();
+        if (currentSearchTerm.length > 0) {
+          clearSearchBtn.classList.remove("hidden");
+        } else {
+          clearSearchBtn.classList.add("hidden");
+        }
+        updateGraphVisuals();
+        renderListView();
+      });
+
+      clearSearchBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        currentSearchTerm = "";
+        clearSearchBtn.classList.add("hidden");
+        updateGraphVisuals();
+        renderListView();
+      });
+
+      // Category Drawer Handlers
+      const filterMenuBtn = document.getElementById("filter-menu-btn");
+      const categoryDrawer = document.getElementById("category-filter-drawer");
+      const closeCategoryDrawerBtn = document.getElementById("close-category-drawer");
+      let categoryDrawerOpen = false;
+
+      function toggleCategoryDrawer(open) {
+        categoryDrawerOpen = typeof open === "boolean" ? open : !categoryDrawerOpen;
+        if (categoryDrawerOpen) {
+          categoryDrawer.classList.remove("-translate-y-full", "opacity-0", "pointer-events-none");
+          categoryDrawer.classList.add("translate-y-0", "opacity-100");
+          filterMenuBtn.classList.add("bg-cyan-600", "text-white");
+        } else {
+          categoryDrawer.classList.add("-translate-y-full", "opacity-0", "pointer-events-none");
+          categoryDrawer.classList.remove("translate-y-0", "opacity-100");
+          filterMenuBtn.classList.remove("bg-cyan-600", "text-white");
+        }
+      }
+
+      filterMenuBtn.addEventListener("click", () => toggleCategoryDrawer());
+      if (closeCategoryDrawerBtn) {
+        closeCategoryDrawerBtn.addEventListener("click", () => toggleCategoryDrawer(false));
+      }
+
+      document.querySelectorAll(".cat-pill").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".cat-pill").forEach(p => {
+            p.classList.remove("bg-cyan-500", "text-slate-950", "font-bold");
+            p.classList.add("bg-slate-800", "text-slate-300");
+          });
+          btn.classList.add("bg-cyan-500", "text-slate-950", "font-bold");
+          btn.classList.remove("bg-slate-800", "text-slate-300");
+
+          activeCategory = btn.getAttribute("data-cat");
+          updateGraphVisuals();
+          renderListView();
+        });
+      });
+
+      document.getElementById("add-anchor-to-compare-btn").addEventListener("click", () => {
+        togglePathologyInBasket(selectedNodeId);
+      });
+
+      document.getElementById("add-current-to-compare-btn").addEventListener("click", () => {
+        togglePathologyInBasket(selectedNodeId);
+      });
+
+      document.getElementById("dock-open-matrix-btn").addEventListener("click", openMultiComparator);
+      document.getElementById("header-compare-btn").addEventListener("click", openMultiComparator);
+
+      document.getElementById("dock-clear-btn").addEventListener("click", () => {
+        comparisonBasket = [];
+        updateComparisonDock();
+        updateGraphVisuals();
+        renderListView();
+        if (activeTab === "diferenciales") selectPathology(selectedNodeId);
+      });
+
+      // Canvas Zoom Buttons
+      document.getElementById("zoom-in").addEventListener("click", () => {
+        d3Svg.transition().duration(300).call(d3Zoom.scaleBy, 1.3);
+      });
+      document.getElementById("zoom-out").addEventListener("click", () => {
+        d3Svg.transition().duration(300).call(d3Zoom.scaleBy, 0.7);
+      });
+      document.getElementById("zoom-reset").addEventListener("click", () => {
+        const container = document.getElementById("graph-container");
+        d3Svg.transition().duration(500).call(
+          d3Zoom.transform,
+          d3.zoomIdentity.translate(container.clientWidth / 2, container.clientHeight / 2).scale(0.85).translate(-container.clientWidth / 2, -container.clientHeight / 2)
+        );
+      });
+
+      document.getElementById("focus-graph-node-btn").addEventListener("click", () => {
+        centerGraphOnNode(selectedNodeId);
+      });
+
+      document.getElementById("close-drawer").addEventListener("click", () => {
+        document.getElementById("pathology-drawer").classList.add("translate-x-full");
+      });
+
+      // Comparator Modal Handlers
+      const comparatorModal = document.getElementById("comparator-modal");
+      const closeComparatorBtn = document.getElementById("close-comparator-btn");
+      const closeComparatorFooterBtn = document.getElementById("comp-close-modal-footer-btn");
+
+      function hideComparator() {
+        comparatorModal.classList.add("hidden");
+      }
+
+      closeComparatorBtn.addEventListener("click", hideComparator);
+      if (closeComparatorFooterBtn) closeComparatorFooterBtn.addEventListener("click", hideComparator);
+
+      comparatorModal.addEventListener("click", (e) => {
+        if (e.target === comparatorModal) hideComparator();
+      });
+
+      const btnPrintComparator = document.getElementById("btn-print-comparator");
+      if (btnPrintComparator) {
+        btnPrintComparator.addEventListener("click", () => {
+          window.print();
+        });
+      }
+
+      const btnPrintActiveSheet = document.getElementById("btn-print-active-sheet");
+      if (btnPrintActiveSheet) {
+        btnPrintActiveSheet.addEventListener("click", () => {
+          if (!comparisonBasket.includes(selectedNodeId)) {
+            comparisonBasket = [selectedNodeId];
+          }
+          openMultiComparator();
+          setTimeout(() => window.print(), 250);
+        });
+      }
+
+      // Help Modal
+      const helpModal = document.getElementById("help-modal");
+      document.getElementById("help-btn").addEventListener("click", () => helpModal.classList.remove("hidden"));
+      document.getElementById("close-help-modal").addEventListener("click", () => helpModal.classList.add("hidden"));
+      document.getElementById("btn-understood").addEventListener("click", () => helpModal.classList.add("hidden"));
+
+      // Responsive Resize
+      window.addEventListener("resize", () => {
+        const container = document.getElementById("graph-container");
+        if (d3Simulation) {
+          d3Simulation.force("center", d3.forceCenter(container.clientWidth / 2, container.clientHeight / 2));
+          d3Simulation.alpha(0.2).restart();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

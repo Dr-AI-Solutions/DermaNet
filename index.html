@@ -1073,9 +1073,9 @@
         },
         differentials: [
           { id: "verrugas_vph", pearl: "Las verrugas tienen superficie áspera queratósica hiperqueratósica con interrupción de dermatoglifos y puntos negros; el molusco es suave, cupuliforme y umbilicado en el centro." },
-          { id: "varicela", pearl: "La varicela es aguda, febril, da prurito intenso y presenta vesículas en gota de rocío confluentes en cuero cabelludo y mucosas; el molusco es crónico, duro y asintomático." },
-          { id: "foliculitis_forunculo", pearl: "La foliculitis es una pústula inflamatoria centrada por un pelo con dolor; el molusco no es folicular ni duele ni tiene pus bacteriano." },
-          { id: "acne", pearl: "El comedón cerrado es un punto blanco plano folicular sin umbilicación cupuliforme ni cuerpos de Henderson-Paterson." }
+          { id: "cancer_piel_no_melanoma", pearl: "Un molusco solitario grande en adultos simula un carcinoma basocelular nodular perlado; el CBC tiene telangiectasias arboriformes que cruzan la lesión y no contiene tapón caseoso." },
+          { id: "foliculitis_forunculo", pearl: "La foliculitis es una pústula inflamatoria aguda bacteriana centrada por un pelo con dolor; el molusco no es folicular ni duele ni tiene pus bacteriano." },
+          { id: "acne", pearl: "El comedón cerrado del acné es un punto blanco plano folicular sin umbilicación cupuliforme ni cuerpos de Henderson-Paterson." }
         ]
       },
       {
@@ -2068,6 +2068,12 @@
       const entityMap = new Map();
       DERMA_DATA.forEach(d => entityMap.set(d.id, d));
 
+      // 1. Purge any differential pointing to an ID that does not exist in DERMA_DATA (guarantees zero orphans)
+      DERMA_DATA.forEach(source => {
+        source.differentials = source.differentials.filter(diff => entityMap.has(diff.id));
+      });
+
+      // 2. Establish bidirectional symmetry: A links to B <=> B links to A
       DERMA_DATA.forEach(source => {
         source.differentials.forEach(diff => {
           const target = entityMap.get(diff.id);

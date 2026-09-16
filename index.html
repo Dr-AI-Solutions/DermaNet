@@ -2654,42 +2654,110 @@
 
       // 2. DYNAMIC Puntos en Común & Reglas de Oro adaptadas a las entidades seleccionadas
       const commonContainer = document.getElementById("multi-comp-common");
-      const categoriesPresent = new Set(items.map(i => i.category));
       
-      let dynamicDesafio = `Las patologías seleccionadas (${items.map(i => `<em>${i.name}</em>`).join(", ")}) comparten manifestaciones clínicas frecuentes en el internado y examen EUNACOM`;
-      let dynamicReglas = [];
+      // Clinical binding premise
+      let dynamicDesafio = `Estas ${items.length} patologías (${items.map(i => `<em>${i.name}</em>`).join(", ")}) comparten morfología (eritema, pápulas, placas o descamación) y requieren un descarte semiológico fino en el internado y examen EUNACOM.`;
 
-      if (categoriesPresent.has("eczemas") || categoriesPresent.has("alergias")) {
-        dynamicReglas.push("<strong>Eje de Prurito y Barrera:</strong> Diferenciar dermatitis atópica (disfunción de filagrina y xerosis en pliegues flexurales), DCA (sensibilización alérgica tipo IV con prueba de parche), DCI (daño químico/mecánico directo no alérgico en dorso de manos) y habones de urticaria (evanescencia <24 h).");
-      }
-      if (categoriesPresent.has("eritematosas") || items.some(i => i.id === "tinea_corporis" || i.id === "sifilis_secundaria" || i.id === "eccema_numular")) {
-        dynamicReglas.push("<strong>Eje Eritematoescamoso y Anular:</strong> En lesiones en placas o anulares, buscar siempre el <em>signo de Auspitz</em> (psoriasis en codos/rodillas), el <em>collarete interno</em> de la placa heráldica (pitiriasis rosada), el <em>borde activo con centro aclarado</em> y KOH positivo (tiña), la moneda homogénea sin centro sano (eccema numular) y el <em>collar de Biett</em> con compromiso palmoplantar y VDRL reactivo (sífilis secundaria).");
-      }
-      if (categoriesPresent.has("infecciosas")) {
-        dynamicReglas.push("<strong>Eje Infeccioso y Lesiones Elementales:</strong> Contrastar pápulas cupuliformes umbilicadas perladas (Molusco) vs. pápulas rugosas hiperqueratósicas con puntos negros (Verrugas VPH) vs. costras melicéricas por S. aureus (Impétigo) vs. pústulas bacterianas foliculares (Foliculitis).");
-      }
-      if (categoriesPresent.has("tumores")) {
-        dynamicReglas.push("<strong>Eje Oncológico y Tumores:</strong> Discriminar aspecto untuoso pegado sobre la piel con quistes córneos (Queratosis Seborreica benigna) vs. tacto rasposo en papel de lija fotoexpuesto (Queratosis Actínica premaligna) vs. nódulo perlado con telangiectasias arboriformes (Carcinoma Basocelular) vs. nódulo vascular friable sangrante (Granuloma Piogénico).");
-      }
-      if (categoriesPresent.has("anexos")) {
-        dynamicReglas.push("<strong>Eje Folicular y Facial:</strong> El <em>comedón</em> es exclusivo y patognomónico del acné vulgar; la rosácea es centrofacial sin comedones y tiene flushing; la foliculitis es aguda monomorfa centrada estrictamente por un pelo.");
+      // Targeted pearls ONLY for the selected diseases
+      const targetedPearls = [];
+
+      // A. Check for direct differential links between any pair in the selected basket
+      const directPairPearls = [];
+      for (let i = 0; i < items.length; i++) {
+        for (let j = 0; j < items.length; j++) {
+          if (i !== j) {
+            const match = items[i].differentials.find(d => d.id === items[j].id);
+            if (match) {
+              const pairKey = [items[i].id, items[j].id].sort().join(" vs ");
+              if (!directPairPearls.some(p => p.key === pairKey)) {
+                directPairPearls.push({
+                  key: pairKey,
+                  from: items[i],
+                  to: items[j],
+                  pearl: match.pearl
+                });
+              }
+            }
+          }
+        }
       }
 
-      if (dynamicReglas.length === 0) {
-        dynamicReglas.push("Analiza siempre la topografía precisa, la lesión elemental primaria (pápula, placa, mácula, habón, escara), la evolución temporal y las contraindicaciones farmacológicas absolutas.");
-      }
+      // If we found direct pairwise relationship pearls among selected items, display them first
+      directPairPearls.slice(0, 3).forEach(pair => {
+        targetedPearls.push({
+          color: pair.from.color,
+          label: `Frente a frente (${pair.from.name} vs ${pair.to.name})`,
+          text: pair.pearl
+        });
+      });
+
+      // B. Add individual pathognomonic discard keys for each selected disease
+      items.forEach(item => {
+        let keySign = "";
+        if (item.id === "sifilis_secundaria") {
+          keySign = "<strong>Sífilis 2ª:</strong> Sifílides papulosas cobrizas con <em>collar de Biett</em> y afectación patognomónica <strong>palmoplantar</strong> bilateral indolora; VDRL/RPR reactivo a títulos altos.";
+        } else if (item.id === "dc_alergica") {
+          keySign = "<strong>DCA:</strong> Hipersensibilidad retardada tipo IV gatillada por contactante que <em>sobrepasa los límites</em> del área expuesta y pica intensamente; confirmación con <strong>Test de Parche (48-72 h)</strong>.";
+        } else if (item.id === "dc_irritativa") {
+          keySign = "<strong>DCI:</strong> Daño citotóxico directo no inmunológico <em>estrictamente limitado</em> a la zona expuesta (dorso de manos); predomina ardor/fisura y el test de parche es negativo.";
+        } else if (item.id === "dermatitis_atopica") {
+          keySign = "<strong>Dermatitis Atópica:</strong> Prurito incoercible con xerosis y eccema en <strong>pliegues flexurales</strong> (o mejillas/extensoras en lactante respetando pañal); antecedente atópico personal/familiar.";
+        } else if (item.id === "psoriasis") {
+          keySign = "<strong>Psoriasis:</strong> Placas en <strong>superficies extensoras</strong> (codos/rodillas) con escamas blanco-nacaradas secas gruesas, signo de Auspitz (+) y posible pitting ungueal; respeta palmas y VDRL (-).";
+        } else if (item.id === "liquen_plano") {
+          keySign = "<strong>Liquen Plano:</strong> Regla de las 4P (Pápulas Poligonales Púrpuras/violáceas Pruriginosas) con <em>estrías de Wickham</em> en <strong>caras flexoras</strong> de muñecas/tobillos y 75% compromiso de mucosa oral.";
+        } else if (item.id === "pitiriasis_rosada") {
+          keySign = "<strong>Pitiriasis Rosada:</strong> Placa heráldica precursora solitaria ovalada con collarete descamativo interno periférico, seguida de brote en árbol de navidad en tronco; respeta palmas/plantas.";
+        } else if (item.id === "eccema_numular") {
+          keySign = "<strong>Eccema Numular:</strong> Placas en <em>moneda homogénea</em> en piernas/tronco sin centro sano, pruriginosas y con KOH al 10-20% negativo para descartar tiña.";
+        } else if (item.id === "tinea_corporis") {
+          keySign = "<strong>Tiña (Tinea):</strong> Placa circinada con <strong>borde activo sobreelevado</strong> y <em>centro curado aclarado</em>; confirmación rápida con <strong>KOH positivo</strong> (hifas hialinas).";
+        } else if (item.id === "urticaria_aguda") {
+          keySign = "<strong>Urticaria Aguda:</strong> Habones o ronchas edematosas de <strong>evanescencia estricta (<24 h)</strong> que brotan y desaparecen sin dejar marca; vigilar signos de anafilaxia.";
+        } else if (item.id === "eritema_polimorfo") {
+          keySign = "<strong>Eritema Polimorfo:</strong> Lesiones fijas en <strong>diana concéntrica de 3 anillos</strong> simétricas acrales (palmas/plantas) habitualmente 1-2 semanas post-herpes simple.";
+        } else if (item.id === "eritema_nodoso") {
+          keySign = "<strong>Eritema Nodoso:</strong> Nódulos pretibiales eritemato-violáceos profundos bilaterales, calientes y muy dolorosos; <strong>nunca se ulceran</strong> y curan con reposo en cama y elevación.";
+        } else if (item.id === "molusco_contagioso") {
+          keySign = "<strong>Molusco Contagioso:</strong> Pápula cupuliforme perlada traslúcida con <strong>umbilicación central</strong> y tapón caseoso (Henderson-Paterson); indolora y no folicular.";
+        } else if (item.id === "verrugas_vph") {
+          keySign = "<strong>Verrugas VPH:</strong> Pápulas rugosas hiperqueratósicas que <strong>interrumpen dermatoglifos</strong> y muestran puntos negros centrales (capilares trombosados sangrantes al corte).";
+        } else if (item.id === "cancer_piel_no_melanoma") {
+          keySign = "<strong>Cáncer No Melanoma:</strong> CBC muestra nódulo perlado con telangiectasias arboriformes; CEC presenta nódulo hiperqueratósico indurado sangrante sobre piel con daño solar.";
+        } else if (item.id === "melanoma") {
+          keySign = "<strong>Melanoma:</strong> Lesión pigmentada con regla ABCDE o signo del patito feo; requiere biopsia escisional completa con margen mínimo de 1-2 mm para Breslow.";
+        } else if (item.id === "rosacea") {
+          keySign = "<strong>Rosácea:</strong> Eritema y pápulo-pústulas centrofaciales con flushing y telangiectasias; <strong>ausencia total de comedones</strong> y contraindicación absoluta de corticoides tópicos.";
+        } else if (item.id === "acne") {
+          keySign = "<strong>Acné Vulgar:</strong> Lesión elemental obligada: <strong>comedón</strong> (abierto o cerrado) en cara/pecho/espalda; diferencia categórica frente a rosácea y foliculitis.";
+        } else if (item.id === "lupus_discoide") {
+          keySign = "<strong>Lupus Discoide:</strong> Tríada de placa con eritema periférico, tapones córneos foliculares (signo de tachuela) y <strong>atrofia cicatrizal central irreversible</strong> con alopecia definitiva.";
+        } else if (item.id === "loxoscelismo") {
+          keySign = "<strong>Loxoscelismo:</strong> Placa livedoide tricolor (azul-blanco-rojo) con flictenas hemorrágicas; solicitar orina completa obligatoria buscando hematuria/hemoglobinuria precoz.";
+        } else {
+          keySign = `<strong>${item.name}:</strong> Evaluar topografía típica (${item.categoryLabel}) y respuesta a esquema de 1ª línea (${item.tratamiento.primera[0] || "terapia guiada"}).`;
+        }
+
+        targetedPearls.push({
+          color: item.color,
+          label: item.name,
+          text: keySign
+        });
+      });
 
       commonContainer.innerHTML = `
-        <div class="flex items-start gap-2">
-          <i class="ph-fill ph-circle text-cyan-400 text-[8px] mt-1 shrink-0"></i>
-          <span><strong>Desafío clínico de descarte:</strong> ${dynamicDesafio}, requiriendo semiología de precisión para orientar la conducta en atención primaria.</span>
+        <div class="flex items-start gap-2.5 pb-1">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 mt-1 shrink-0 shadow-sm shadow-cyan-400/50"></span>
+          <span><strong>Desafío clínico de descarte:</strong> ${dynamicDesafio}</span>
         </div>
-        ${dynamicReglas.map(r => `
-          <div class="flex items-start gap-2">
-            <i class="ph-fill ph-circle text-amber-400 text-[8px] mt-1 shrink-0"></i>
-            <span>${r}</span>
-          </div>
-        `).join("")}
+        <div class="space-y-1.5 pt-1 border-t border-slate-800/60">
+          ${targetedPearls.map(p => `
+            <div class="flex items-start gap-2.5">
+              <span class="w-2.5 h-2.5 rounded-full mt-1 shrink-0 shadow-sm" style="background-color: ${p.color}" title="${p.label}"></span>
+              <span class="text-slate-200">${p.text}</span>
+            </div>
+          `).join("")}
+        </div>
       `;
 
       // 3. Matrix Table Body (Comparison dimensions)

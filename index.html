@@ -10,7 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <!-- Phosphor Icons CDN -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <!-- Google Fonts: Inter -->
+  <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -48,7 +48,6 @@
     .node-link {
       transition: stroke-opacity 0.3s, stroke-width 0.3s;
     }
-    /* Comparison selection highlight */
     .compare-selected-badge {
       animation: pulse-glow 2s infinite ease-in-out;
     }
@@ -122,7 +121,7 @@
           <i class="ph-bold ph-x text-xs"></i>
         </button>
       </div>
-      <button data-cat="all" class="cat-pill active px-3 py-1 rounded-full bg-cyan-500 text-slate-950 font-bold transition">Todas (<span id="cat-total-count">28</span>)</button>
+      <button data-cat="all" class="cat-pill active px-3 py-1 rounded-full bg-cyan-500 text-slate-950 font-bold transition">Todas (<span id="cat-total-count">0</span>)</button>
       <button data-cat="eczemas" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-pink-400 border border-pink-500/30 transition">Eczemas & Dermatitis</button>
       <button data-cat="infecciosas" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 transition">Infecciones Cutáneas</button>
       <button data-cat="eritematosas" class="cat-pill px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 transition">Eritematoescamosas</button>
@@ -173,7 +172,7 @@
       <div class="max-w-5xl mx-auto space-y-4">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400">Patologías Dermatológicas EUNACOM</h2>
-          <span id="list-count" class="text-xs text-cyan-400 font-semibold bg-cyan-950/60 border border-cyan-800/60 px-2.5 py-0.5 rounded-full">21 Patologías</span>
+          <span id="list-count" class="text-xs text-cyan-400 font-semibold bg-cyan-950/60 border border-cyan-800/60 px-2.5 py-0.5 rounded-full">0 Patologías</span>
         </div>
         <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <!-- Dynamically populated card items -->
@@ -245,7 +244,7 @@
               <i class="ph-bold ph-dna"></i> Fisiopatología & Claves
             </h4>
             <p id="drawer-fisiopato" class="text-slate-300 leading-relaxed bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
-              Disregulación inmune Th2 con alteración de la filagrina y barrera cutánea.
+              <!-- Content populated via JS -->
             </p>
           </div>
 
@@ -329,7 +328,7 @@
           </div>
 
           <p class="text-slate-400 text-[11px]">
-            Compara frente a frente las características comunes y de descarte. Puedes seleccionar varias para compararlas simultáneamente estilo ficha técnica:
+            Diagnósticos diferenciales conectados en la red. Puedes comparar cada par o seleccionarlos para contrastarlos simultáneamente en el comparador:
           </p>
           <div id="drawer-diff-list" class="space-y-2.5">
             <!-- populated with differential cards -->
@@ -337,7 +336,7 @@
         </div>
       </div>
 
-      <!-- Drawer Footer: Quick Jump into Red Differential -->
+      <!-- Drawer Footer -->
       <div class="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-[11px]">
         <span class="text-slate-400">Navegación activa en la red</span>
         <div class="flex items-center gap-2">
@@ -352,7 +351,7 @@
     </aside>
   </div>
 
-  <!-- FLOATING MULTI-COMPARE DOCK (BARRA FLOTANTE DE COMPARACIÓN) -->
+  <!-- FLOATING MULTI-COMPARE DOCK -->
   <div id="compare-dock" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur-md border border-indigo-500/40 rounded-2xl px-4 py-2.5 shadow-2xl flex items-center gap-3.5 transition-all duration-300 translate-y-28 opacity-0 pointer-events-none">
     <div class="flex items-center gap-2">
       <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-sm font-bold">
@@ -360,7 +359,7 @@
       </div>
       <div class="text-xs">
         <span class="text-white font-bold block leading-none">Comparador Multi-Patología</span>
-        <span id="dock-counter-text" class="text-[11px] text-indigo-300">0 seleccionadas (máx 4)</span>
+        <span id="dock-counter-text" class="text-[11px] text-indigo-300">0 seleccionadas</span>
       </div>
     </div>
 
@@ -380,6 +379,7 @@
     </div>
   </div>
 
+  <!-- Help Modal -->
   <div id="help-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
@@ -396,9 +396,9 @@
         </p>
         <ul class="space-y-2 list-disc list-inside text-slate-300">
           <li><strong>Red interactiva:</strong> Cada globo es una patología. Las líneas conectan diagnósticos diferenciales directos.</li>
+          <li><strong>Sincronía total:</strong> Todos los globos interconectados con la patología activa aparecen exactamente listados en la pestaña <em>"Diferenciales"</em> con su perla clínica de descarte.</li>
           <li><strong>Homogeneidad total:</strong> Cada ficha presenta exactamente la misma estructura rigurosa (definición, topografía, diagnóstico, pautas con <em>dosis exactas</em>, perla diferencial y derivación).</li>
-          <li><strong>Navegación clínica:</strong> En la pestaña <em>"Diferenciales"</em> puedes leer en qué se diferencia de otra enfermedad y saltar de globo en globo con un solo clic.</li>
-          <li><strong>Comparador Multi-Patología:</strong> Puedes seleccionar 2, 3 o hasta 4 patologías a la vez (como comparar dispositivos o fichas técnicas) para contrastar semiología, descarte de examen y dosis en una sola tabla sinóptica.</li>
+          <li><strong>Comparador Multi-Patología Adaptativo:</strong> Puedes seleccionar 2, 3, 4 o más patologías a la vez para contrastar semiología, descarte específico según el grupo nosológico y farmacoterapia en una sola tabla sinóptica.</li>
           <li><strong>Arrastre y Zoom:</strong> Puedes arrastrar los nodos, usar la rueda del ratón o los botones táctiles de zoom.</li>
         </ul>
       </div>
@@ -410,7 +410,7 @@
     </div>
   </div>
 
-  <!-- MULTI-COMPARATOR MODAL (SIDE-BY-SIDE 2 to 4 PATHOLOGIES TABLE) -->
+  <!-- MULTI-COMPARATOR MODAL -->
   <div id="comparator-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 hidden select-text">
     <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-6xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
       
@@ -439,18 +439,18 @@
       <div class="flex-1 overflow-x-auto overflow-y-auto p-3 sm:p-5 space-y-4 text-xs">
         
         <!-- SECTION 1: ENTITY HEADERS GRID -->
-        <div id="multi-comp-headers" class="grid gap-3 min-w-[680px]">
-          <!-- Populated dynamically with 2, 3 or 4 columns -->
+        <div id="multi-comp-headers" class="flex gap-3 overflow-x-auto pb-2 min-w-full">
+          <!-- Populated dynamically -->
         </div>
 
-        <!-- SECTION 2: PUNTOS EN COMÚN / POR QUÉ SE CONFUNDEN -->
+        <!-- SECTION 2: PUNTOS EN COMÚN / POR QUÉ SE CONFUNDEN (DYNAMIC) -->
         <div class="space-y-2">
           <div class="flex items-center gap-2 text-cyan-400 font-bold uppercase tracking-wider text-[11px]">
             <i class="ph-bold ph-intersect text-sm"></i>
             <span>Puntos de Unión: ¿Por qué se consideran diagnósticos diferenciales en el examen?</span>
           </div>
           <div id="multi-comp-common" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-1.5 text-slate-300 leading-relaxed">
-            <!-- Dynamically populated -->
+            <!-- Dynamically populated per specific selections -->
           </div>
         </div>
 
@@ -476,14 +476,14 @@
             <i class="ph-bold ph-pill text-sm"></i>
             <span>Conducta Terapéutica, Dosis Exactas de 1ª Línea y Contraindicaciones Críticas</span>
           </div>
-          <div id="multi-comp-treatments" class="grid gap-3 min-w-[680px]">
+          <div id="multi-comp-treatments" class="flex gap-3 overflow-x-auto pb-2 min-w-full">
             <!-- Dynamically populated treatment cards -->
           </div>
         </div>
 
       </div>
 
-      <!-- Comparator Footer with Quick Actions -->
+      <!-- Comparator Footer -->
       <div class="p-3 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
         <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
           <i class="ph ph-info text-cyan-400"></i>
@@ -850,7 +850,9 @@
         differentials: [
           { id: "sifilis_secundaria", pearl: "La roséola sifilítica afecta palmas y plantas, no tiene medallón precursor y tiene serología VDRL/RPR fuertemente positiva." },
           { id: "psoriasis", pearl: "Psoriasis guttata tiene escamas gruesas plateadas sin collarete interno y se asocia a cultivo faríngeo positivo a estreptococo." },
-          { id: "tinea_corporis", pearl: "El medallón heráldico inicial suele confundirse con tiña, pero la tiña tiene borde periférico con avance excéntrico activo y KOH positivo." }
+          { id: "tinea_corporis", pearl: "El medallón heráldico inicial suele confundirse con tiña, pero la tiña tiene borde periférico con avance excéntrico activo y KOH positivo." },
+          { id: "eritema_polimorfo", pearl: "El eritema multiforme presenta lesiones en diana concéntricas acrales con afectación palmoplantar; la PR es troncal con patrón en árbol de navidad." },
+          { id: "reaccion_farmacos", pearl: "El exantema medicamentoso morbiliforme tiene antecedente de fármaco nuevo en las últimas 2 semanas y es intensamente pruriginoso sin placa heráldica." }
         ]
       },
       {
@@ -938,8 +940,8 @@
         },
         differentials: [
           { id: "rosacea", pearl: "La rosácea nunca tiene comedones; cursa con flushing, eritema persistente telangiectásico y pápulo-pústulas en personas mayores de 30 años." },
-          { id: "foliculitis_bacteriana", pearl: "Pústulas foliculares monomorfas agudas en cuello/barba sin comedones abiertos ni cerrados." },
-          { id: "dermatitis_perioral", pearl: "Micropápulas agrupadas alrededor de la boca con un halo libre peribucal, inducida por corticoides tópicos previos." }
+          { id: "foliculitis_forunculo", pearl: "Pústulas foliculares monomorfas agudas en cuello/barba centradas por pelo sin comedones abiertos ni cerrados." },
+          { id: "molusco_contagioso", pearl: "Pápulas perladas umbilicadas no foliculares y sin comedones que afectan tronco y pliegues axilares en niños." }
         ]
       },
       {
@@ -982,7 +984,140 @@
         differentials: [
           { id: "acne", pearl: "El acné siempre presenta comedones y suele comenzar en la pubertad; la rosácea no tiene comedones e inicia después de los 30 años." },
           { id: "dermatitis_seborreica", pearl: "Presenta descamación grasa amarillenta en surcos nasogenianos y cuero cabelludo; la rosácea no descama grasosa y tiene telangiectasias." },
-          { id: "lupus_eritematoso", pearl: "El eritema malar del lupus en alas de mariposa respeta típicamente los surcos nasogenianos, es fotosensible y tiene anticuerpos ANA positivos." }
+          { id: "lupus_discoide", pearl: "El lupus discoide genera placas con atrofia cicatrizal central irreversible y tapones córneos; la rosácea tiene telangiectasias sin atrofia cicatrizal." }
+        ]
+      },
+      {
+        id: "foliculitis_forunculo",
+        name: "Foliculitis & Forunculosis",
+        category: "anexos",
+        categoryLabel: "Acné, Rosácea & Folículo",
+        color: "#a855f7",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo" },
+        fisiopatologia: "Infección bacteriana piógena aguda del ostium o folículo piloso profundo, causada en el 90% por <em>Staphylococcus aureus</em>. El forúnculo implica necrosis e inflamación perifolicular profunda del aparato pilosebáceo con formación del 'clavo' o esfacelo necrótico.",
+        clinica: [
+          "<strong>Foliculitis superficial:</strong> Pequeñas pústulas milimétricas cupuliformes centradas obligadamente por un tallo piloso, rodeadas por un halo eritematoso fino (barba, muslos, glúteos, axilas).",
+          "<strong>Forúnculo:</strong> Nódulo eritematoso caliente, muy doloroso a la palpación, con pústula central prominente que drena material purulento espeso y un centro necrótico característico ('clavo').",
+          "<strong>Ántrax (Ántrax estafilocócico / Forúnculo confluente):</strong> Agrupación de varios forúnculos interconectados en nuca o dorso, con dolor exquisito, fiebre y cicatrización deformante."
+        ],
+        diagnostico: [
+          "Clínico directo por la presencia de pústulas foliculares monomorfas.",
+          "Cultivo y antibiograma de la secreción purulenta en casos recurrentes o refractarios para descartar SAMU (S. aureus resistente a meticilina)."
+        ],
+        tratamiento: {
+          general: [
+            "Compresas tibias húmedas 3 a 4 veces al día para acelerar el drenaje espontáneo del forúnculo.",
+            "Aseo diario con jabón antiséptico (Clorhexidina al 2% o 4%).",
+            "Corte del afeitado al ras en zona de barba; preferir máquina recortadora eléctrica."
+          ],
+          primera: [
+            "<strong>Foliculitis localizada superficial:</strong> Mupirocina 2% ungüento o Ácido Fusídico 2% crema cada 8 h por 7 a 10 días.",
+            "<strong>Forúnculo simple fluctuante:</strong> Incisión y drenaje quirúrgico con bisturí 11; si mide <2 cm sin celulitis circundante no requiere antibiótico oral.",
+            "<strong>Forúnculo con celulitis perilesional, en cara (triángulo de la muerte) o lesiones múltiples:</strong><br>• Cloxacilina 500 mg c/6 h VO por 7 a 10 días.<br>• O Cefadroxilo 500 mg c/12 h VO por 7 a 10 días."
+          ],
+          segunda: [
+            "En sospecha o confirmación de SAMU o alergia a betalactámicos: Cotrimoxazol (Sulfametoxazol 800 mg / Trimetoprim 160 mg) cada 12 h VO o Clindamicina 300 mg cada 8 h VO por 7-10 días.",
+            "En forunculosis recurrente: Descolonización nasal y de pliegues del paciente y cohabitantes con Mupirocina nasal 2 veces al día por 5 días al mes."
+          ],
+          derivacion: [
+            "Forúnculo en el triángulo de Filatow (área nasogeniana / labio superior) con signos de flebitis por riesgo de trombosis del seno cavernoso (hospitalización urgente para antibióticos EV).",
+            "Ántrax extenso en paciente diabético o inmunodeprimido."
+          ]
+        },
+        differentials: [
+          { id: "acne", pearl: "El acné es polimorfo y presenta comedones abiertos y cerrados; la foliculitis es monomorfa, aguda, no tiene comedones y siempre está centrada por un pelo." },
+          { id: "rosacea", pearl: "La rosácea centrofacial tiene eritema persistente con flushing y telangiectasias; la foliculitis ocurre típicamente tras el afeitado y es de evolución aguda bacteriana." },
+          { id: "molusco_contagioso", pearl: "El molusco presenta pápulas perladas umbilicadas que no duelen ni contienen pus líquido bacteriano." }
+        ]
+      },
+      {
+        id: "molusco_contagioso",
+        name: "Molusco Contagioso",
+        category: "infecciosas",
+        categoryLabel: "Infecciones Cutáneas",
+        color: "#f59e0b", // amber-500
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo" },
+        fisiopatologia: "Infección cutánea superficial benigna causada por el <em>Molluscum Contagiosum Virus</em> (MCV), un virus DNA de gran tamaño de la familia Poxviridae. Se transmite por contacto directo piel a piel, fomites contaminados (toallas, piscinas) o como ITS en adultos jóvenes.",
+        clinica: [
+          "Lesión patognomónica elemental: <strong>Pápula hemisférica cupuliforme perlada o traslúcida (1 a 5 mm) con umbilicación central bien definida</strong>.",
+          "Al exprimir suavemente la lesión drena un tapón caseoso blanquecino rico en viriones y queratina (<strong>cuerpos de Henderson-Paterson</strong> o cuerpos de molusco).",
+          "<strong>Distribución en niños:</strong> Zonas de roce como axilas, caras laterales de tronco, fosa poplítea y párpados. Muy frecuente sobre áreas de dermatitis atópica (eccema molluscatum).",
+          "<strong>Distribución en adultos:</strong> Genitales, pubis, hipogastrio y cara interna de muslos (adquisición por vía sexual).",
+          "Habitualmente asintomático, salvo que desarrolle eritema reactivo inflamatorio periférico ('signo de BOTE') que anticipa la resolución inmune espontánea."
+        ],
+        diagnostico: [
+          "Diagnóstico fundamentalmente clínico por la inspección de la pápula umbilicada perlada.",
+          "Dermatoscopía: orificio central redondeado con estructuras amorfas blanco-amarillentas rodeadas de vasos en corona que no cruzan el centro.",
+          "En adultos con lesiones masivas (>20-30), gigantes (>1 cm) o centrofaciales: solicitar serología VIH obligatoria."
+        ],
+        tratamiento: {
+          general: [
+            "<strong>Educación y tranquilidad a los padres:</strong> Infección benigna autolimitada que el sistema inmune erradica espontáneamente en 6 a 18 meses sin cicatrices.",
+            "Evitar compartir toallas, esponjas y baños de tina compartidos entre hermanos.",
+            "Corte de uñas para evitar la autoinoculación por rascado."
+          ],
+          primera: [
+            "<strong>Conducta expectante / observación activa:</strong> Es la alternativa de 1ª línea preferida en niños pequeños no complicados.",
+            "<strong>Curetaje mecánico / Legrado rápido:</strong> Con cureta dérmica bajo anestesia tópica previa (lidocaína/prilocaína en crema oclusiva por 45-60 min). Altamente efectivo con resolución inmediata.",
+            "<strong>Crioterapia con nitrógeno líquido:</strong> Aplicación rápida puntual de 5 a 10 segundos por pápula."
+          ],
+          segunda: [
+            "Hidróxido de potasio (KOH) al 10% solución acuosa: aplicar diariamente con hisopo solo sobre el centro de la pápula hasta provocar inflamación/costra (3 a 5 días).",
+            "Ácido salicílico al 10-15% en colodión tópico.",
+            "Imiquimod 5% crema 3 noches por semana en casos extensos."
+          ],
+          derivacion: [
+            "Moluscos gigantes centrofaciales en adultos o inmunodeprimidos (descarte VIH).",
+            "Compromiso palpebral con queratoconjuntivitis secundaria por vertido viral al saco conjuntival."
+          ]
+        },
+        differentials: [
+          { id: "verrugas_vph", pearl: "Las verrugas tienen superficie áspera queratósica hiperqueratósica con interrupción de dermatoglifos y puntos negros; el molusco es suave, cupuliforme y umbilicado en el centro." },
+          { id: "varicela", pearl: "La varicela es aguda, febril, da prurito intenso y presenta vesículas en gota de rocío confluentes en cuero cabelludo y mucosas; el molusco es crónico, duro y asintomático." },
+          { id: "foliculitis_forunculo", pearl: "La foliculitis es una pústula inflamatoria centrada por un pelo con dolor; el molusco no es folicular ni duele ni tiene pus bacteriano." },
+          { id: "acne", pearl: "El comedón cerrado es un punto blanco plano folicular sin umbilicación cupuliforme ni cuerpos de Henderson-Paterson." }
+        ]
+      },
+      {
+        id: "verrugas_vph",
+        name: "Verrugas Cutáneas Virales (VPH)",
+        category: "infecciosas",
+        categoryLabel: "Infecciones Cutáneas",
+        color: "#f59e0b",
+        eunacom: { diag: "Específico", tto: "Completo", seg: "Completo" },
+        fisiopatologia: "Proliferación epidérmica benigna inducida por la infección de queratinocitos de la capa basal por genotipos cutáneos del <em>Virus Papiloma Humano</em> (VPH). VPH 1, 2, 4 y 7 causan verrugas vulgares y plantares; VPH 3 y 10 causan verrugas planas; VPH 6 y 11 condilomas acuminados.",
+        clinica: [
+          "<strong>Verrugas vulgares (mezquinos):</strong> Pápulas o placas exofíticas hiperqueratósicas de superficie rugosa verrugosa ('en coliflor'), duras e indoloras en dorso de manos y periungueales.",
+          "<strong>Verrugas plantares ('ojos de gallo' / papilomas):</strong> Endofíticas por la presión al caminar, hiperqueratósicas, <strong>muy dolorosas al pellizco lateral</strong> (más que a la presión vertical directa).",
+          "<strong>Signo cardinal patognomónico:</strong> Interrupción de las líneas de la piel (dermatoglifos) y presencia de <strong>pequeños puntos negros centrales</strong> (capilares dérmicos papilares trombosados y hemorrágicos).",
+          "<strong>Verrugas planas:</strong> Pápulas lisas mínimamente sobreelevadas de 1-3 mm de color piel o marrón claro en frente, mejillas y dorso de manos."
+        ],
+        diagnostico: [
+          "Diagnóstico fundamentalmente clínico.",
+          "Prueba del bisturí: al decapar suavemente la hiperqueratosis con hoja de bisturí 15 se descubren los puntos negros puntiformes sangrantes (a diferencia del heloma/callo plantar que muestra queratina compacta homogénea sin puntos negros)."
+        ],
+        tratamiento: {
+          general: [
+            "Explicar que la mayoría remiten espontáneamente en 1 a 2 años al desarrollarse inmunidad celular.",
+            "No manipular con alicates ni limas compartidas para prevenir autoinoculación a dedos o lecho ungueal."
+          ],
+          primera: [
+            "<strong>Queratolíticos tópicos (1ª línea en domicilio):</strong><br>• Ácido salicílico al 16.7% + Ácido láctico al 16.7% en colodión elástico.<br>• Modo de uso: Limar suavemente la superficie tras baño tibio, aplicar 1 gota cada noche evitando piel sana circundante (proteger con vaselina) por 8 a 12 semanas.",
+            "<strong>Crioterapia con nitrógeno líquido (1ª línea en consulta):</strong><br>• Aplicación con torunda o spray durante 10 a 15 segundos hasta congelar halo de 1 mm alrededor de la base; repetir cada 2 a 3 semanas (2 a 4 sesiones)."
+          ],
+          segunda: [
+            "Imiquimod 5% crema o 5-Fluorouracilo (5-FU) tópico en lesiones recalcitrantes o periungueales.",
+            "Electrocoagulación y curetaje quirúrgico bajo anestesia local infiltrativa."
+          ],
+          derivacion: [
+            "Verrugas periungueales destructivas que amenacen la matriz ungueal.",
+            "Lesiones faciales extensas resistentes a queratolíticos suaves por riesgo de cicatrización antiestética."
+          ]
+        },
+        differentials: [
+          { id: "molusco_contagioso", pearl: "El molusco es liso, cupuliforme y umbilicado central; la verruga vulgar es rugosa, áspera hiperqueratósica y tiene capilares trombosados negros." },
+          { id: "queratosis_seborreica", pearl: "La queratosis seborreica parece una galleta pegada grasosa untuosa sobre la piel con quistes córneos y respeta plantas de pies; las verrugas interrumpen los dermatoglifos." },
+          { id: "cancer_piel_no_melanoma", pearl: "El carcinoma espinocelular verrugoso infiltra y destruye en profundidad y aparece en ancianos; las verrugas son frecuentes en niños y jóvenes." }
         ]
       },
       {
@@ -1021,9 +1156,9 @@
           ]
         },
         differentials: [
-          { id: "tinea_capitis", pearl: "Placas alopécicas con pelos rotos tiñosos y descamación profusa ('falsas tiñas') en niños, cultivo/examen directo micológico positivo." },
+          { id: "tinea_corporis", pearl: "La tinea capitis genera placas alopécicas con pelos rotos tiñosos y descamación profusa ('falsas tiñas') en niños, con examen directo con KOH positivo." },
           { id: "sifilis_secundaria", pearl: "Alopecia sifilítica 'en claros de luna' o 'apolillada' irregular parcheada, serología VDRL positiva." },
-          { id: "tricotilomania", pearl: "Placas irregulares no redondeadas con pelos de distinta longitud rotos por tracción voluntaria en niños o adolescentes." }
+          { id: "lupus_discoide", pearl: "El lupus discoide en cuero cabelludo provoca alopecia cicatrizal definitiva irreversible con tapones foliculares; las alopecias no cicatrizales conservan los orificios foliculares." }
         ]
       },
       {
@@ -1031,7 +1166,7 @@
         name: "Impétigo y Piodermias Superficiales",
         category: "infecciosas",
         categoryLabel: "Infecciones Cutáneas",
-        color: "#f59e0b", // amber-500
+        color: "#f59e0b",
         eunacom: { diag: "Específico", tto: "Completo", seg: "Completo" },
         fisiopatologia: "Infección bacteriana superficial epidérmica causada predominantemente por <em>Staphylococcus aureus</em> (productor de toxina exfoliativa) y secundariamente por <em>Streptococcus pyogenes</em> (EGA).",
         clinica: [
@@ -1062,9 +1197,10 @@
           ]
         },
         differentials: [
-          { id: "herpes_simple", pearl: "Vesículas arracimadas sobre base eritematosa con prurito/ardor prodrómico previo; no da costras melicéricas extensas." },
+          { id: "herpes_simple_zoster", pearl: "Vesículas arracimadas sobre base eritematosa con prurito/ardor prodrómico previo; no da costras melicéricas extensas." },
           { id: "dermatitis_atopica", pearl: "La DA puede impetiginizarse secundariamente, pero tiene antecedentes de atopia, xerosis y prurito crónico persistente." },
-          { id: "varicela", pearl: "Exantema polimorfo generalizado con compromiso de cuero cabelludo y fiebre; lesiones en 'cielo estrellado'." }
+          { id: "eccema_numular", pearl: "El eccema numular es una dermatitis crónica en moneda que puede impetiginizarse secundariamente; el impétigo primario es periorificial melicérico agudo." },
+          { id: "pediculosis", pearl: "Las costras melicéricas en nuca de niños suelen ser secundarias a rascado por pediculosis capitis subyacente." }
         ]
       },
       {
@@ -1105,9 +1241,9 @@
           ]
         },
         differentials: [
-          { id: "tvp", pearl: "Trombosis venosa profunda da empastamiento de pantorrilla, signo de Homans y edema blando sin eritema rojo fuego marcado en escalón ni fiebre alta de inicio brusco." },
           { id: "dc_alergica", pearl: "Prurito intenso, presencia de vesículas y sin fiebre ni leucocitosis ni dolor exquisito al tacto." },
-          { id: "dermatitis_estasis", pearl: "Bilateral, crónica, asociada a várices e hiperpigmentación ocre hemosiderínica sin fiebre aguda." }
+          { id: "eritema_nodoso", pearl: "El eritema nodoso es bilateral, pretibial en nódulos dolorosos profundos contusiformes que no se ulceran; la celulitis es difusa unilateral." },
+          { id: "loxoscelismo", pearl: "La mordedura de araña de rincón da placa livedoide con centro necrótico azulado y vasoconstricción; no comienza con calor y eritema difuso en escalón." }
         ]
       },
       {
@@ -1189,7 +1325,6 @@
         },
         differentials: [
           { id: "vitiligo", pearl: "Vitíligo causa máculas acrómicas blanco tiza con ausencia completa de melanocitos, sin descamación al raspado (signo de uñada negativo)." },
-          { id: "pitiriasis_alba", pearl: "Máculas hipopigmentadas secas en mejillas y brazos de niños con dermatitis atópica tras exposición solar, no descama en harina." },
           { id: "sifilis_secundaria", pearl: "El 'collar de Venus' sifilítico en cuello se asocia a lesiones palmoplantares y serología VDRL positiva." }
         ]
       },
@@ -1309,9 +1444,8 @@
           ]
         },
         differentials: [
-          { id: "varicela", pearl: "Lesiones en gotas de rocío polimorfas febriles que comprometen cuero cabelludo y mucosas; el prúrigo no afecta mucosas ni da fiebre." },
           { id: "escabiosis", pearl: "Prurito nocturno intenso que afecta pliegues interdigitales, genitales y contagia a la familia entera; el prúrigo respeta pliegues." },
-          { id: "urticaria", pearl: "Habones evanescentes que duran menos de 24 horas y cambian de lugar; las pápulas del prúrigo persisten por días." }
+          { id: "urticaria_aguda", pearl: "Habones evanescentes que duran menos de 24 horas y cambian de lugar; las pápulas del prúrigo persisten por días." }
         ]
       },
       {
@@ -1393,7 +1527,8 @@
         differentials: [
           { id: "melanoma", pearl: "Pigmentado, asimétrico, bordes irregulares, policromático; el CBC perlado clásico no tiene melanina atípica (salvo CBC pigmentado)." },
           { id: "queratosis_seborreica", pearl: "Lesión benigna de aspecto verrugoso 'pegada sobre la piel' con tapones córneos y sin telangiectasias perladas." },
-          { id: "psoriasis", pearl: "Placas simétricas descamativas que mejoran transitoriamente; una placa solitaria en anciano que no sana debe hacer sospechar CEC in situ (Enfermedad de Bowen)." }
+          { id: "queratosis_actinica", pearl: "La QA es una lesión premaligna plana eritematosa rasposa en lija; cuando se indura o infiltra en profundidad debe sospecharse CEC invasor." },
+          { id: "granuloma_piogenico", pearl: "El granuloma piogénico es vascular agudo y sangra profusamente ante mínimos roces en dedos o labios; el CEC es una lesión hiperqueratósica crónica sobre piel senil." }
         ]
       },
       {
@@ -1431,8 +1566,8 @@
         },
         differentials: [
           { id: "cancer_piel_no_melanoma", pearl: "El CBC pigmentado tiene telangiectasias arboriformes perladas; el CEC suele ser queratósico y no policromático profundo." },
-          { id: "lentigo_solar", pearl: "Máculas café uniforme pequeñas en áreas fotoexpuestas sin atipia dermatoscópica ni crecimiento asimétrico evolutivo." },
-          { id: "queratosis_seborreica", pearl: "Apariencia hiperqueratósica cerosa 'untada', orificios foliculares con quistes de milium y bordes definidos regulares." }
+          { id: "queratosis_seborreica", pearl: "Apariencia hiperqueratósica cerosa 'untada', orificios foliculares con quistes de milium y bordes definidos regulares." },
+          { id: "granuloma_piogenico", pearl: "El melanoma amelanótico puede simular un granuloma piogénico sangrante; la histopatología tras extirpación es mandataria." }
         ]
       },
       {
@@ -1510,7 +1645,7 @@
           ]
         },
         differentials: [
-          { id: "urticaria", pearl: "Los habones de urticaria son evanescentes (desaparecen en <24 h en un sitio para brotar en otro); el exantema medicamentoso es fijo y persistente." },
+          { id: "urticaria_aguda", pearl: "Los habones de urticaria son evanescentes (desaparecen en <24 h en un sitio para brotar en otro); el exantema medicamentoso es fijo y persistente." },
           { id: "sifilis_secundaria", pearl: "Roséola sifilítica tiene serología treponémica positiva y pápulas cobrizas con afectación palmoplantar indolora." },
           { id: "pitiriasis_rosada", pearl: "Presenta placa heráldica precursora y orientación según líneas de tensión en árbol de navidad, sin relación con fármacos." }
         ]
@@ -1552,8 +1687,7 @@
         },
         differentials: [
           { id: "pitiriasis_versicolor", pearl: "Máculas hipopigmentadas (no acrómicas tiza) que desprenden escama fina al raspado (signo de la uñada positivo) y KOH con levaduras." },
-          { id: "pitiriasis_alba", pearl: "Lesiones hipocrómicas mal delimitadas con xerosis superficial en niños atópicos, no tienen la pérdida total de pigmento del vitíligo." },
-          { id: "liquen_escleroso", pearl: "Afecta área anogenital femenina con atrofia epidérmica 'en papel de cigarrillo' y retracción anatómica; el vitíligo no genera atrofia cutánea." }
+          { id: "dermatitis_seborreica", pearl: "Las hipopigmentaciones posinflamatorias de la dermatitis seborreica son tenues y se acompañan de escama oleosa centrofacial." }
         ]
       },
       {
@@ -1636,7 +1770,8 @@
         differentials: [
           { id: "melanoma", pearl: "El melanoma cumple la regla ABCDE con policromía, asimetría, bordes infiltrantes y sin aspecto adherido ceroso ni tapones córneos de queratina." },
           { id: "queratosis_actinica", pearl: "La QA es rasposa en lija, fotoexpuesta y premaligna; la QS es untuosa sobre elevada indolora benigna." },
-          { id: "cancer_piel_no_melanoma", pearl: "El CBC pigmentado tiene brillo perlado translúcido y telangiectasias finas arboriformes, sin aspecto de costra adherida." }
+          { id: "cancer_piel_no_melanoma", pearl: "El CBC pigmentado tiene brillo perlado translúcido y telangiectasias finas arboriformes, sin aspecto de costra adherida." },
+          { id: "verrugas_vph", pearl: "Las verrugas vulgares son queratósicas con puntos negros trombosados y se presentan en manos de niños y adultos jóvenes." }
         ]
       },
       {
@@ -1842,7 +1977,7 @@
         },
         differentials: [
           { id: "celulitis_erisipela", pearl: "La celulitis es habitualmente unilateral con bordes difusos y puerta de entrada; el eritema nodoso es bilateral, pretibial en nódulos múltiples que no se ulceran." },
-          { id: "tvp", pearl: "La trombosis venosa profunda cursa con empastamiento unilateral de pantorrilla, dolor con la dorsiflexión y no genera nódulos eritematosos pretibiales bilaterales." }
+          { id: "loxoscelismo", pearl: "La placa livedoide por loxoscelismo es asimétrica, fría centralmente y evoluciona a escara necrótica dura." }
         ]
       },
       {
@@ -1928,7 +2063,30 @@
       }
     ];
 
-    // Helper to generate unique edges
+    // Ensure every node knows all outgoing and incoming differential links (100% synchronized with graph)
+    function synchronizeBidirectionalDifferentials() {
+      const entityMap = new Map();
+      DERMA_DATA.forEach(d => entityMap.set(d.id, d));
+
+      DERMA_DATA.forEach(source => {
+        source.differentials.forEach(diff => {
+          const target = entityMap.get(diff.id);
+          if (target) {
+            const alreadyPresent = target.differentials.some(d => d.id === source.id);
+            if (!alreadyPresent) {
+              target.differentials.push({
+                id: source.id,
+                pearl: `Diferencial recíproco con ${source.name}: Evaluar presentación clínica, patrón morfológico y respuesta a tratamiento de 1ª línea.`
+              });
+            }
+          }
+        });
+      });
+    }
+
+    synchronizeBidirectionalDifferentials();
+
+    // Generate graph nodes and unique links
     const graphNodes = DERMA_DATA.map(d => ({
       id: d.id,
       name: d.name,
@@ -1943,7 +2101,6 @@
 
     DERMA_DATA.forEach(source => {
       source.differentials.forEach(diff => {
-        // Find if target exists in dataset
         const targetExists = DERMA_DATA.some(item => item.id === diff.id);
         if (targetExists) {
           const key = [source.id, diff.id].sort().join("<->");
@@ -1964,7 +2121,7 @@
     let activeCategory = "all";
     let currentSearchTerm = "";
     let activeTab = "clinica";
-    let comparisonBasket = []; // Multi-selection list (unlimited)
+    let comparisonBasket = []; // Initialized empty
     let d3Simulation = null;
     let d3Svg = null;
     let d3Zoom = null;
@@ -2054,7 +2211,7 @@
 
       d3Svg.call(d3Zoom);
 
-      // Define SVG gradient filters for links
+      // Gradient filters
       const defs = d3Svg.append("defs");
       const filter = defs.append("filter")
         .attr("id", "glow")
@@ -2071,12 +2228,12 @@
 
       // D3 Force Simulation setup
       d3Simulation = d3.forceSimulation(graphNodes)
-        .force("link", d3.forceLink(graphLinks).id(d => d.id).distance(110).strength(0.4))
-        .force("charge", d3.forceManyBody().strength(-380))
+        .force("link", d3.forceLink(graphLinks).id(d => d.id).distance(115).strength(0.38))
+        .force("charge", d3.forceManyBody().strength(-390))
         .force("center", d3.forceCenter(width / 2, height / 2))
         .force("collision", d3.forceCollide().radius(48));
 
-      // Draw edges (links)
+      // Draw edges
       linkElements = d3ContainerG.append("g")
         .attr("class", "links")
         .selectAll("line")
@@ -2086,7 +2243,7 @@
         .attr("stroke-width", 1.8)
         .attr("stroke-opacity", 0.55);
 
-      // Draw node groups
+      // Draw nodes
       nodeElements = d3ContainerG.append("g")
         .attr("class", "nodes")
         .selectAll("g")
@@ -2111,7 +2268,7 @@
         .attr("stroke-opacity", 0)
         .attr("stroke-dasharray", "4,4");
 
-      // Comparison Basket Indicator (dotted outer badge)
+      // Comparison Basket Indicator
       nodeElements.append("circle")
         .attr("class", "basket-indicator")
         .attr("r", 32)
@@ -2168,7 +2325,7 @@
       });
 
       // Center view initially
-      d3Svg.call(d3Zoom.transform, d3.zoomIdentity.translate(0, 0).scale(0.95));
+      d3Svg.call(d3Zoom.transform, d3.zoomIdentity.translate(0, 0).scale(0.92));
       updateGraphVisuals();
     }
 
@@ -2424,7 +2581,7 @@
         });
       });
 
-      // Attach handlers to basket checkboxes/buttons
+      // Attach handlers to basket buttons
       document.querySelectorAll(".btn-toggle-basket").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -2463,9 +2620,8 @@
       // Update Header tag
       document.getElementById("comp-modal-tag").textContent = `Comparando ${items.length} Patologías Simultáneamente`;
 
-      // 1. Headers en scroll horizontal dinámico con ancho mínimo asegurado
+      // 1. Headers en scroll horizontal
       const headersContainer = document.getElementById("multi-comp-headers");
-      headersContainer.className = `flex gap-3 overflow-x-auto pb-2 min-w-full`;
       headersContainer.innerHTML = items.map(item => `
         <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-2 flex-1 min-w-[240px] max-w-sm">
           <div class="space-y-1">
@@ -2490,19 +2646,45 @@
         </div>
       `).join("");
 
-      // 2. Common Points
+      // 2. DYNAMIC Puntos en Común & Reglas de Oro adaptadas a las entidades seleccionadas
       const commonContainer = document.getElementById("multi-comp-common");
-      let commonHtml = `
+      const categoriesPresent = new Set(items.map(i => i.category));
+      
+      let dynamicDesafio = `Las patologías seleccionadas (${items.map(i => `<em>${i.name}</em>`).join(", ")}) comparten manifestaciones clínicas frecuentes en el internado y examen EUNACOM`;
+      let dynamicReglas = [];
+
+      if (categoriesPresent.has("eczemas") || categoriesPresent.has("alergias")) {
+        dynamicReglas.push("<strong>Eje de Prurito y Barrera:</strong> Diferenciar dermatitis atópica (disfunción de filagrina y xerosis en pliegues flexurales), DCA (sensibilización alérgica tipo IV con prueba de parche), DCI (daño químico/mecánico directo no alérgico en dorso de manos) y habones de urticaria (evanescencia <24 h).");
+      }
+      if (categoriesPresent.has("eritematosas") || items.some(i => i.id === "tinea_corporis" || i.id === "sifilis_secundaria" || i.id === "eccema_numular")) {
+        dynamicReglas.push("<strong>Eje Eritematoescamoso y Anular:</strong> En lesiones en placas o anulares, buscar siempre el <em>signo de Auspitz</em> (psoriasis en codos/rodillas), el <em>collarete interno</em> de la placa heráldica (pitiriasis rosada), el <em>borde activo con centro aclarado</em> y KOH positivo (tiña), la moneda homogénea sin centro sano (eccema numular) y el <em>collar de Biett</em> con compromiso palmoplantar y VDRL reactivo (sífilis secundaria).");
+      }
+      if (categoriesPresent.has("infecciosas")) {
+        dynamicReglas.push("<strong>Eje Infeccioso y Lesiones Elementales:</strong> Contrastar pápulas cupuliformes umbilicadas perladas (Molusco) vs. pápulas rugosas hiperqueratósicas con puntos negros (Verrugas VPH) vs. costras melicéricas por S. aureus (Impétigo) vs. pústulas bacterianas foliculares (Foliculitis).");
+      }
+      if (categoriesPresent.has("tumores")) {
+        dynamicReglas.push("<strong>Eje Oncológico y Tumores:</strong> Discriminar aspecto untuoso pegado sobre la piel con quistes córneos (Queratosis Seborreica benigna) vs. tacto rasposo en papel de lija fotoexpuesto (Queratosis Actínica premaligna) vs. nódulo perlado con telangiectasias arboriformes (Carcinoma Basocelular) vs. nódulo vascular friable sangrante (Granuloma Piogénico).");
+      }
+      if (categoriesPresent.has("anexos")) {
+        dynamicReglas.push("<strong>Eje Folicular y Facial:</strong> El <em>comedón</em> es exclusivo y patognomónico del acné vulgar; la rosácea es centrofacial sin comedones y tiene flushing; la foliculitis es aguda monomorfa centrada estrictamente por un pelo.");
+      }
+
+      if (dynamicReglas.length === 0) {
+        dynamicReglas.push("Analiza siempre la topografía precisa, la lesión elemental primaria (pápula, placa, mácula, habón, escara), la evolución temporal y las contraindicaciones farmacológicas absolutas.");
+      }
+
+      commonContainer.innerHTML = `
         <div class="flex items-start gap-2">
           <i class="ph-fill ph-circle text-cyan-400 text-[8px] mt-1 shrink-0"></i>
-          <span><strong>Desafío clínico de descarte:</strong> Las patologías seleccionadas (${items.map(i => `<em>${i.name}</em>`).join(", ")}) comparten presentaciones de eritema, escamas, queratosis o lesiones pigmentadas que frecuentemente se prestan a confusión en preguntas de internado y EUNACOM.</span>
+          <span><strong>Desafío clínico de descarte:</strong> ${dynamicDesafio}, requiriendo semiología de precisión para orientar la conducta en atención primaria.</span>
         </div>
-        <div class="flex items-start gap-2">
-          <i class="ph-fill ph-circle text-cyan-400 text-[8px] mt-1 shrink-0"></i>
-          <span><strong>Regla de oro de examen:</strong> Fíjate en la <em>topografía exacta</em> (fotoexpuesta vs pliegues vs palmas/plantas), la <em>consistencia táctil</em> (papel de lija en QA vs untuosa pegada en QS vs induración en CEC) y las <em>contraindicaciones farmacológicas absolutas</em>.</span>
-        </div>
+        ${dynamicReglas.map(r => `
+          <div class="flex items-start gap-2">
+            <i class="ph-fill ph-circle text-amber-400 text-[8px] mt-1 shrink-0"></i>
+            <span>${r}</span>
+          </div>
+        `).join("")}
       `;
-      commonContainer.innerHTML = commonHtml;
 
       // 3. Matrix Table Body (Comparison dimensions)
       const tableBody = document.getElementById("multi-comp-table-body");
@@ -2563,7 +2745,6 @@
 
       // 4. Comparative Treatments
       const treatmentsContainer = document.getElementById("multi-comp-treatments");
-      treatmentsContainer.className = `flex gap-3 overflow-x-auto pb-2 min-w-full`;
       treatmentsContainer.innerHTML = items.map(item => `
         <div class="p-3 rounded-xl bg-slate-950/90 border border-emerald-900/40 space-y-2 font-mono-code text-[11px] flex-1 min-w-[240px] max-w-sm">
           <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-emerald-900/40 pb-1.5">
@@ -2667,7 +2848,6 @@
         card.addEventListener("click", () => {
           const id = card.getAttribute("data-id");
           selectPathology(id);
-          // Switch to graph and center
           document.getElementById("mode-graph").click();
           setTimeout(() => centerGraphOnNode(id), 300);
         });
@@ -2750,7 +2930,7 @@
       tabBtns.tratamiento.addEventListener("click", () => switchTab("tratamiento"));
       tabBtns.diferenciales.addEventListener("click", () => {
         switchTab("diferenciales");
-        updateDifferentialTabContent(selectedNodeId);
+        selectPathology(selectedNodeId);
       });
 
       // Search input handler
@@ -2776,7 +2956,7 @@
         renderListView();
       });
 
-      // Category Drawer Toggle with close button
+      // Category Drawer Toggle
       const filterMenuBtn = document.getElementById("filter-menu-btn");
       const categoryDrawer = document.getElementById("category-filter-drawer");
       const closeCategoryDrawerBtn = document.getElementById("close-category-drawer");
@@ -2788,7 +2968,6 @@
           categoryDrawer.classList.remove("-translate-y-full", "opacity-0", "pointer-events-none");
           categoryDrawer.classList.add("translate-y-0", "opacity-100");
           filterMenuBtn.classList.add("bg-cyan-600", "text-white");
-          // If the hint is still present, temporarily hide it to keep canvas spotless
           if (graphHint) graphHint.classList.add("opacity-25");
         } else {
           categoryDrawer.classList.add("-translate-y-full", "opacity-0", "pointer-events-none");
@@ -2852,7 +3031,7 @@
           updateComparisonDock();
           updateGraphVisuals();
           renderListView();
-          if (activeTab === "diferenciales") updateDifferentialTabContent(selectedNodeId);
+          if (activeTab === "diferenciales") selectPathology(selectedNodeId);
         });
       }
 
@@ -2867,7 +3046,7 @@
         const container = document.getElementById("graph-container");
         d3Svg.transition().duration(500).call(
           d3Zoom.transform,
-          d3.zoomIdentity.translate(container.clientWidth / 2, container.clientHeight / 2).scale(0.95).translate(-container.clientWidth / 2, -container.clientHeight / 2)
+          d3.zoomIdentity.translate(container.clientWidth / 2, container.clientHeight / 2).scale(0.92).translate(-container.clientWidth / 2, -container.clientHeight / 2)
         );
       });
 
@@ -2894,7 +3073,6 @@
         closeComparatorFooterBtn.addEventListener("click", hideComparator);
       }
 
-      // Close modal on background click
       comparatorModal.addEventListener("click", (e) => {
         if (e.target === comparatorModal) hideComparator();
       });
